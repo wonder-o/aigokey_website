@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AigoKey 订阅说明</title>
-  <meta name="description" content="AigoKey 三档订阅说明：轻量版、标准版、专业版的价格、每日额度、月总额度、使用价值和联系客服续费方式。">
+  <meta name="description" content="AigoKey 五档套餐说明：日卡、周卡、轻量版、标准版、专业版的价格、每日额度、周期总额度、使用价值和联系客服续费方式。">
   <style>
     :root {
       color-scheme: light;
@@ -239,16 +239,16 @@
 
     .plan-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(208px, 1fr));
+      gap: 14px;
     }
 
     .plan-card {
       position: relative;
       display: grid;
       align-content: start;
-      min-height: 470px;
-      padding: 30px;
+      min-height: 472px;
+      padding: 24px;
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: var(--radius);
       background: rgba(255, 255, 255, 0.09);
@@ -279,14 +279,19 @@
     }
 
     .price {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+      white-space: nowrap;
       margin-top: 16px;
-      font-size: clamp(44px, 5vw, 64px);
+      font-size: clamp(34px, 3.2vw, 48px);
       line-height: 1;
       font-weight: 950;
     }
 
     .price span {
-      font-size: 18px;
+      flex: 0 0 auto;
+      font-size: 16px;
       color: rgba(255, 255, 255, 0.68);
     }
 
@@ -357,7 +362,12 @@
       background: #ffffff;
     }
 
-    .value-grid,
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
     .renew-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -509,7 +519,11 @@
       }
 
       .price {
-        font-size: 44px;
+        font-size: 40px;
+      }
+
+      .plan-card {
+        min-height: auto;
       }
     }
   </style>
@@ -520,12 +534,12 @@
       <div class="hero-inner">
         <div>
           <div class="eyebrow">AigoKey 订阅说明</div>
-          <h1>三档月卡，按你的 <span>AI 使用强度</span> 选择</h1>
+          <h1>五档套餐，按你的 <span>AI 使用周期</span> 选择</h1>
           <p class="hero-copy">
-            AigoKey 提供轻量版、标准版、专业版三档订阅，覆盖 Codex Agent、GPT 系列模型和 Image 系列模型。每档都有清晰价格、每日额度和月总额度，适合从轻量办公到高频生产的不同使用需求。
+            AigoKey 提供日卡、周卡、轻量版、标准版、专业版五档套餐，覆盖 Codex Agent、GPT 系列模型和 Image 系列模型。日卡适合当天急用，周卡适合一周冲刺，月卡适合长期稳定工作流。
           </p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#plans">查看三档订阅</a>
+            <a class="button button-primary" href="#plans">查看五档套餐</a>
             <a class="button button-ghost" href="#renew">联系客服续费</a>
           </div>
         </div>
@@ -533,10 +547,10 @@
         <aside class="summary-panel" aria-label="订阅核心说明">
           <h2>订阅前先看清楚</h2>
           <ul class="summary-list">
-            <li>固定月费，不做 API 按次调用，不做按量付费。</li>
-            <li>每日额度和月总额度同时展示，便于控制使用节奏。</li>
+            <li>日卡 ¥10/天，周卡 ¥50/周，月卡适合长期稳定使用。</li>
+            <li>每日额度和周期总额度同时展示，便于控制使用节奏。</li>
             <li>支持按实际订阅金额开具发票，联系客服确认开票信息。</li>
-            <li>需要续费、升级、降级或确认额度时，直接联系微信客服。</li>
+            <li>需要开通、续费、升级、降级或确认额度时，直接联系微信客服。</li>
           </ul>
         </aside>
       </div>
@@ -546,14 +560,58 @@
       <div class="section-inner">
         <div class="section-head">
           <h2>订阅档次与额度</h2>
-          <p class="section-desc">三档月卡都可以稳定使用 Codex Agent、GPT 系列模型和 Image 系列模型，区别在于每月预算、每日额度和月总额度。</p>
+          <p class="section-desc">五档套餐都可以稳定使用 Codex Agent、GPT 系列模型和 Image 系列模型，区别在于使用周期、每日额度和周期总额度。</p>
         </div>
 
         <div class="plan-grid">
           <article class="plan-card">
+            <div class="badge">灵活</div>
+            <div class="plan-name">日卡</div>
+            <div class="price">¥10 <span>/ 天</span></div>
+            <p class="plan-sub">适合当天赶需求、体验 Codex Agent，或集中处理一次代码、文案、图片和资料任务。</p>
+            <div class="quota-grid">
+              <div class="quota">
+                <span>每日额度</span>
+                <strong>$50/天</strong>
+              </div>
+              <div class="quota">
+                <span>周期额度</span>
+                <strong>$50/天</strong>
+              </div>
+            </div>
+            <ul class="check-list">
+              <li>当天需要当天开，不用长期承诺</li>
+              <li>适合试用、急单和临时集中处理</li>
+              <li>用低门槛体验轻量额度</li>
+            </ul>
+          </article>
+
+          <article class="plan-card">
+            <div class="badge">冲刺</div>
+            <div class="plan-name">周卡</div>
+            <div class="price">¥50 <span>/ 周</span></div>
+            <p class="plan-sub">适合一周项目冲刺、连续改代码、批量出内容和集中做图，每天都有固定额度可用。</p>
+            <div class="quota-grid">
+              <div class="quota">
+                <span>每日额度</span>
+                <strong>$50/天</strong>
+              </div>
+              <div class="quota">
+                <span>周总额度</span>
+                <strong>$3500/周</strong>
+              </div>
+            </div>
+            <ul class="check-list">
+              <li>比日卡更适合连续几天高频使用</li>
+              <li>覆盖一周内多轮项目和内容任务</li>
+              <li>短期预算清晰，用完再续更灵活</li>
+            </ul>
+          </article>
+
+          <article class="plan-card">
             <div class="plan-name">轻量版</div>
             <div class="price">¥168 <span>/ 月</span></div>
-            <p class="plan-sub">适合日常办公、轻量内容处理、低频图片生成和个人轻量高频使用。</p>
+            <p class="plan-sub">适合日常办公、轻量内容处理、低频图片生成和个人轻量高频使用，按月使用更省心。</p>
             <div class="quota-grid">
               <div class="quota">
                 <span>每日额度</span>
@@ -595,7 +653,7 @@
 
           <article class="plan-card">
             <div class="plan-name">专业版</div>
-            <div class="price">¥568 <span>/ 月</span></div>
+            <div class="price">¥588 <span>/ 月</span></div>
             <p class="plan-sub">适合更高频的连续任务、集中创作、开发协作和更大额度需求。</p>
             <div class="quota-grid">
               <div class="quota">
@@ -620,23 +678,33 @@
     <section class="value-band">
       <div class="section-inner">
         <div class="section-head">
-          <h2>每档订阅的使用价值</h2>
-          <p class="section-desc">你可以按照真实工作强度选择档位，不需要先研究复杂参数，也不用按次计算消耗。</p>
+          <h2>每档套餐的使用价值</h2>
+          <p class="section-desc">你可以按照真实工作周期和强度选择档位，不需要先研究复杂参数，也不用按次计算消耗。</p>
         </div>
 
         <div class="value-grid">
           <article class="card">
             <div class="card-num">01</div>
-            <h3>轻量版：稳定覆盖日常 AI 使用</h3>
-            <p>适合写邮件、做摘要、整理资料、生成轻量图片、让 Codex 辅助小任务。适合个人从偶尔使用转向每天使用。</p>
+            <h3>日卡：适合当天急用和低门槛体验</h3>
+            <p>适合当天赶需求、试用 Codex Agent，或集中完成一批代码、文案、图片和资料整理任务。</p>
           </article>
           <article class="card">
             <div class="card-num">02</div>
-            <h3>标准版：适合多数高频生产力场景</h3>
-            <p>适合每天用 GPT 写作分析、用 Codex 读项目改代码、用 Image 模型生成运营素材，是最均衡的订阅档位。</p>
+            <h3>周卡：适合一周项目冲刺</h3>
+            <p>适合连续几天高频使用，每天 $50 额度、周总 $3500，覆盖一周内多轮项目、内容和图片任务。</p>
           </article>
           <article class="card">
             <div class="card-num">03</div>
+            <h3>月卡：适合长期稳定工作流</h3>
+            <p>轻量版、标准版、专业版分别面向日常使用、高频生产和重度连续任务，适合把 AI 深度嵌入每天工作。</p>
+          </article>
+          <article class="card">
+            <div class="card-num">04</div>
+            <h3>标准版：适合多数高频生产力场景</h3>
+            <p>适合每天用 GPT 写作分析、用 Codex 读项目改代码、用 Image 模型生成运营素材，是最均衡的月卡档位。</p>
+          </article>
+          <article class="card">
+            <div class="card-num">05</div>
             <h3>专业版：适合连续任务和更大额度</h3>
             <p>适合密集开发、批量内容生产、图片创作、团队协作前期验证和需要更大月总额度的重度用户。</p>
           </article>
@@ -648,32 +716,32 @@
       <div class="section-inner">
         <div class="section-head">
           <h2>续费、升级和联系客服</h2>
-          <p class="section-desc">到期续费、升级专业版、降级轻量版、确认额度或办理发票，都可以通过客服处理。</p>
+          <p class="section-desc">开通日卡、周卡、到期续费、升级专业版、降级轻量版、确认额度或办理发票，都可以通过客服处理。</p>
         </div>
 
         <div class="renew-grid">
           <article class="renew-card">
             <h3>1. 登录查看当前订阅</h3>
-            <p>先进入订阅站点查看当前使用状态、到期时间和使用习惯，再决定续费原档位还是调整档位。</p>
+            <p>先进入订阅站点查看当前使用状态、到期时间和使用习惯，再决定开通日卡、周卡、续费原档位还是调整档位。</p>
           </article>
           <article class="renew-card">
             <h3>2. 联系客服确认档位</h3>
-            <p>告诉客服需要续费、升级或降级，并确认轻量版、标准版、专业版对应价格和额度。</p>
+            <p>告诉客服需要日卡、周卡、续费、升级或降级，并确认对应周期、价格、每日额度和周期总额度。</p>
           </article>
           <article class="renew-card">
             <h3>3. 开通后确认额度</h3>
-            <p>完成续费或变更后，建议确认每日额度和月总额度是否与所选档位一致，避免后续使用误解。</p>
+            <p>完成开通、续费或变更后，建议确认每日额度和周期总额度是否与所选档位一致，避免后续使用误解。</p>
           </article>
         </div>
 
         <div class="contact-box">
           <div>
             <h3>需要续费或确认方案？</h3>
-            <p>添加微信客服，说明你要续费、升级、降级、开票或确认额度。客服会根据你的当前订阅和使用需求，协助处理后续开通。</p>
+            <p>添加微信客服，说明你要开通日卡、周卡、续费、升级、降级、开票或确认额度。客服会根据你的当前订阅和使用需求，协助处理后续开通。</p>
           </div>
           <aside class="qr-panel" aria-label="客服微信二维码">
             <img src="assets/customer-service-qr.png" alt="客服微信二维码">
-            <p>微信扫码添加客服，备注“续费”或“订阅档位”。</p>
+            <p>微信扫码添加客服，备注“日卡”“周卡”“续费”或“订阅档位”。</p>
           </aside>
         </div>
       </div>
@@ -688,20 +756,20 @@
 
         <div class="faq-list">
           <details open>
-            <summary>三档订阅分别是多少钱？</summary>
-            <p>轻量版 ¥168/月，标准版 ¥300/月，专业版 ¥568/月。价格为固定月费，不做 API 按次调用，不做按量付费。</p>
+            <summary>五档套餐分别是多少钱？</summary>
+            <p>日卡 ¥10/天，周卡 ¥50/周；月卡包含轻量版 ¥168/月、标准版 ¥300/月、专业版 ¥588/月。所有套餐都不是 API 按次调用，也不是按量付费。</p>
           </details>
           <details>
-            <summary>每日额度和月总额度分别是多少？</summary>
-            <p>轻量版每天 $50、月总 $1500；标准版每天 $100、月总 $3000；专业版每天 $200、月总 $6000。</p>
+            <summary>每日额度和周期总额度分别是多少？</summary>
+            <p>日卡每天 $50；周卡每天 $50、周总 $3500；轻量版每天 $50、月总 $1500；标准版每天 $100、月总 $3000；专业版每天 $200、月总 $6000。</p>
           </details>
           <details>
             <summary>可以中途升级或降级吗？</summary>
-            <p>如需升级、降级或调整订阅档位，请联系客服确认当前订阅状态、剩余周期和可用处理方式。</p>
+            <p>如需从日卡、周卡切换到月卡，或升级、降级、调整订阅档位，请联系客服确认当前订阅状态、剩余周期和可用处理方式。</p>
           </details>
           <details>
             <summary>续费时需要提供什么？</summary>
-            <p>联系客服时请说明账号、当前订阅档位、希望续费或变更的档位，以及是否需要开具发票。</p>
+            <p>联系客服时请说明账号、当前订阅档位、希望开通或变更的档位，以及是否需要开具发票。</p>
           </details>
           <details>
             <summary>可以开发票吗？</summary>
