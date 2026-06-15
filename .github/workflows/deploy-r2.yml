@@ -17,8 +17,7 @@ jobs:
       - name: Copy files to dist
         run: |
           mkdir -p ./dist
-          cp -r . ./dist
-          rm -rf ./dist/.git ./dist/.github
+          rsync -a --exclude='.git' --exclude='.github' --exclude='dist' . ./dist/
 
       - name: Delete existing folder on R2
         env:
@@ -26,7 +25,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
         run: |
-          aws s3 rm s3://${{ secrets.R2_BUCKET_NAME }}/static-home-site/ \
+          aws s3 rm s3://${{ secrets.R2_BUCKET_NAME }}/koten/static-home-site/ \
             --recursive \
             --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
 
@@ -36,6 +35,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
         run: |
-          aws s3 sync ./dist s3://${{ secrets.R2_BUCKET_NAME }}/static-home-site/ \
+          aws s3 sync ./dist s3://${{ secrets.R2_BUCKET_NAME }}/koten/static-home-site/ \
             --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --no-progress
