@@ -16,6 +16,7 @@ jobs:
 
       - name: Copy files to dist
         run: |
+          rm -rf ./dist
           mkdir -p ./dist
           cp -r . ./dist
           rm -rf ./dist/.git ./dist/.github
