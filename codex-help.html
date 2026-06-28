@@ -624,7 +624,7 @@
         <h2>【1】前置：联系客服</h2>
         <p class="lead">有使用问题，或者充值，请联系微信客服。</p>
         <ul class="url-list">
-          <li>Codex 订阅站点：<a href="https://llm.koten.cc/" target="_blank" rel="noopener">https://llm.koten.cc/</a></li>
+          <li>Codex 订阅站点：<a href="/" data-host-link target="_blank" rel="noopener">首页</a></li>
         </ul>
         <figure>
           <img src="/assets/01_联系客服_微信二维码.png" alt="联系客服微信二维码">
@@ -811,7 +811,7 @@
         <div class="price">定价：300 元一个月（量大管饱），日 100 美刀，总额 3000 美刀</div>
         <p>Codex 订阅站点：</p>
         <ul class="url-list">
-          <li><a href="https://llm.koten.cc/" target="_blank" rel="noopener">https://llm.koten.cc/</a></li>
+          <li><a href="/" data-host-link target="_blank" rel="noopener">首页</a></li>
         </ul>
         <p>有使用问题，或者充值，请联系微信客服：</p>
         <figure>
@@ -852,6 +852,46 @@
         }, 1400);
       });
     });
+
+    function resolveHostOrigin() {
+      // 1. URL 参数显式覆盖(?host= / ?origin=),宿主可显式传入,最可靠
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const explicit = params.get("host") || params.get("origin");
+        if (explicit) {
+          const value = explicit.trim().replace(/\/+$/, "");
+          return /^https?:\/\//i.test(value) ? value : "https://" + value.replace(/^\/+/, "");
+        }
+      } catch (error) {}
+
+      // 2. ancestorOrigins:跨域 iframe 下只读祖先 origin,取最近一层(直接父=宿主域名)
+      try {
+        const ancestors = window.location.ancestorOrigins;
+        if (ancestors && ancestors.length > 0) {
+          return ancestors[ancestors.length - 1].replace(/\/+$/, "");
+        }
+      } catch (error) {}
+
+      // 3. document.referrer:iframe 加载来源作为补充
+      try {
+        if (document.referrer) {
+          return new URL(document.referrer).origin;
+        }
+      } catch (error) {}
+
+      // 4. 兜底:读取不到宿主时用当前页面自身域名
+      return window.location.origin;
+    }
+
+    function applyHostLinks() {
+      const origin = resolveHostOrigin();
+      document.querySelectorAll("[data-host-link]").forEach((element) => {
+        element.href = origin;
+        element.textContent = origin;
+      });
+    }
+
+    applyHostLinks();
   </script>
 </body>
 </html>

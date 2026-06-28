@@ -1222,8 +1222,8 @@
           </div>
           <div class="nav-actions" aria-label="常用操作">
             <button class="button button-ghost language-toggle js-language-toggle" type="button" aria-label="切换到英文" onclick="toggleLanguage()">EN</button>
-            <a class="button button-ghost" href="https://llm.koten.cc/register" target="_top">注册</a>
-            <a class="button button-ghost" href="https://llm.koten.cc/login" target="_top">登录</a>
+            <a class="button button-ghost" href="/register" data-redirect="register" target="_top">注册</a>
+            <a class="button button-ghost" href="/login" data-redirect="login" target="_top">登录</a>
             <a class="button button-ghost" href="codex-help.html">帮助文档</a>
             <button class="button button-primary js-open-trial" type="button">免费体验</button>
           </div>
@@ -1240,7 +1240,7 @@
                 ¥5/天起，覆盖 Codex Agent、GPT 系列模型和 Image 系列模型。日卡适合当天急用，周卡适合一周冲刺，月卡适合长期稳定工作流；每天 $30-$200 额度，不做 API 按次调用，不做按量付费。
               </p>
               <div class="hero-actions">
-                <a class="button button-primary" href="https://llm.koten.cc/login" target="_top">登录使用</a>
+                <a class="button button-primary" href="/login" data-redirect="login" target="_top">登录使用</a>
                 <a class="button button-ghost" href="codex-help.html">查看帮助文档</a>
                 <button class="button button-green js-open-trial" type="button">免费开通体验</button>
               </div>
@@ -1664,7 +1664,7 @@
               </p>
             </div>
             <div class="contact-actions">
-              <a class="button button-primary" href="https://llm.koten.cc/login" target="_top">登录</a>
+              <a class="button button-primary" href="/login" data-redirect="login" target="_top">登录</a>
               <a class="button button-ghost" href="codex-help.html">帮助文档</a>
               <button class="button button-green js-open-trial" type="button">免费体验</button>
             </div>
@@ -2156,8 +2156,49 @@
         saveLanguage(language);
       }
 
+      function resolveHostOrigin() {
+        // 1. URL 参数显式覆盖(?host= / ?origin=),宿主可显式传入,最可靠
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const explicit = params.get("host") || params.get("origin");
+          if (explicit) {
+            const value = explicit.trim().replace(/\/+$/, "");
+            return /^https?:\/\//i.test(value) ? value : "https://" + value.replace(/^\/+/, "");
+          }
+        } catch (error) {}
+
+        // 2. ancestorOrigins:跨域 iframe 下只读祖先 origin,取最近一层(直接父=宿主域名)
+        try {
+          const ancestors = window.location.ancestorOrigins;
+          if (ancestors && ancestors.length > 0) {
+            return ancestors[ancestors.length - 1].replace(/\/+$/, "");
+          }
+        } catch (error) {}
+
+        // 3. document.referrer:iframe 加载来源作为补充
+        try {
+          if (document.referrer) {
+            return new URL(document.referrer).origin;
+          }
+        } catch (error) {}
+
+        // 4. 兜底:读取不到宿主时用当前页面自身域名
+        return window.location.origin;
+      }
+
+      function applyRedirects() {
+        const origin = resolveHostOrigin();
+        document.querySelectorAll("[data-redirect]").forEach((element) => {
+          const path = element.getAttribute("data-redirect");
+          if (path) {
+            element.href = origin + "/" + path;
+          }
+        });
+      }
+
       const savedLanguage = readSavedLanguage();
       setLanguage(savedLanguage === "en" ? "en" : "zh");
+      applyRedirects();
 
       function openTrialModal() {
         trialModal.classList.add("is-open");
