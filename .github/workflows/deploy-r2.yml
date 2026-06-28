@@ -20,6 +20,7 @@ jobs:
 
       - name: Copy files to dist
         run: |
+          rm -rf ./dist
           mkdir -p ./dist
           rsync -a --exclude='.git' --exclude='.github' --exclude='dist' . ./dist/
       - name: Delete existing folder on R2
