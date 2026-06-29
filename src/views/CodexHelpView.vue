@@ -62,7 +62,7 @@
           <ul class="url-list">
             <li>Codex 订阅站点：<router-link to="/" class="font-bold text-[#0d4f47]">首页</router-link></li>
           </ul>
-          <figure>
+          <figure class="qr">
             <img src="/assets/01_联系客服_微信二维码.png" alt="联系客服微信二维码" />
             <figcaption>联系客服微信二维码</figcaption>
           </figure>
@@ -203,7 +203,7 @@
             <li><router-link to="/" class="font-bold text-[#0d4f47]">首页</router-link></li>
           </ul>
           <p>有使用问题，或者充值，请联系微信客服：</p>
-          <figure><img src="/assets/12_联系客服_微信二维码.png" alt="联系客服微信二维码" /><figcaption>联系客服微信二维码</figcaption></figure>
+          <figure class="qr"><img src="/assets/12_联系客服_微信二维码.png" alt="联系客服微信二维码" /><figcaption>联系客服微信二维码</figcaption></figure>
           <p class="notice">提示：本页面由原 Markdown 手册整理生成，图片仍使用原文档中的在线图片链接。</p>
         </section>
       </main>
@@ -309,11 +309,13 @@ p { margin: 10px 0; }
 .copy-btn { border: 0; border-left: 1px solid #334854; background: #20333d; color: #fff; padding: 0 14px; cursor: pointer; font: inherit; font-weight: 700; min-width: 74px; }
 .copy-btn:hover { background: #126a5f; }
 
-figure { margin: 16px 0 0; border: 1px solid #d9e1e8; border-radius: 8px; overflow: hidden; background: #f2f5f7; }
+figure { margin: 16px 0 0; border: 1px solid #d9e1e8; border-radius: 8px; overflow: hidden; background: #f2f5f7; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 figure img { width: 100%; object-fit: contain; background: #fff; }
-figcaption { padding: 10px 12px; color: #66707a; font-size: 13px; border-top: 1px solid #d9e1e8; background: #fbfcfd; }
+figcaption { padding: 12px 14px; color: #52606a; font-size: 14px; border-top: 1px solid #d9e1e8; background: #fbfcfd; }
 
-.gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 12px; }
+.gallery { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 14px; }
+
+figure.qr { max-width: 280px; margin-left: auto; margin-right: auto; }
 
 .price-box { margin: 16px 0; padding: 18px; border-radius: 8px; background: #eaf7f4; border: 1px solid rgba(18, 106, 95, 0.22); font-size: 18px; font-weight: 800; color: #0d4f47; }
 
@@ -331,7 +333,6 @@ figcaption { padding: 10px 12px; color: #66707a; font-size: 13px; border-top: 1p
   .hero p { font-size: 16px; }
   .hero-actions { display: grid; }
   .button, .button.secondary { justify-content: center; width: 100%; }
-  .gallery { grid-template-columns: 1fr; }
   .step { grid-template-columns: 1fr; }
   .command { grid-template-columns: 1fr; }
   .copy-btn { min-height: 40px; border-left: 0; border-top: 1px solid #334854; }
