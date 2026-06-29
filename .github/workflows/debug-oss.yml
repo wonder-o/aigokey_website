@@ -6,6 +6,7 @@ on:
 jobs:
   debug-oss:
     runs-on: ubuntu-latest
+    environment: prod
 
     steps:
       - name: Print configuration (hidden)
