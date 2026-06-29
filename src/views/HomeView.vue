@@ -9,8 +9,8 @@
         </router-link>
         <div class="flex items-center gap-3 max-[720px]:w-full max-[720px]:grid max-[720px]:grid-cols-[repeat(auto-fit,minmax(76px,1fr))] max-[720px]:gap-2">
           <button class="btn btn-ghost min-w-[58px] max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" type="button" @click="toggleLang">{{ t.navButtons.toggle }}</button>
-          <a class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" href="/register" target="_top">{{ t.navButtons.register }}</a>
-          <a class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" href="/login" target="_top">{{ t.navButtons.login }}</a>
+          <a class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" :href="registerUrl" target="_top">{{ t.navButtons.register }}</a>
+          <a class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" :href="loginUrl" target="_top">{{ t.navButtons.login }}</a>
           <router-link class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" to="/codex-help">{{ t.navButtons.help }}</router-link>
           <button class="btn btn-primary max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" type="button" @click="showModal = true">{{ t.navButtons.trial }}</button>
         </div>
@@ -30,7 +30,7 @@
             <h1 class="max-w-[720px] text-[clamp(42px,6vw,76px)] leading-[1.04] font-black">{{ t.heroTitleBefore }}<span class="text-blue">{{ t.heroTitleHighlight }}</span>{{ t.heroTitleAfter }}</h1>
             <p class="max-w-[690px] mt-5 text-muted text-[19px] leading-[1.82]">{{ t.heroCopy }}</p>
             <div class="flex items-center gap-3 flex-wrap mt-8">
-              <a class="btn btn-primary" href="/login" target="_top">{{ t.heroButtons.login }}</a>
+              <a class="btn btn-primary" :href="loginUrl" target="_top">{{ t.heroButtons.login }}</a>
               <router-link class="btn btn-ghost" to="/codex-help">{{ t.heroButtons.help }}</router-link>
               <button class="btn btn-green" type="button" @click="showModal = true">{{ t.heroButtons.trial }}</button>
             </div>
@@ -230,7 +230,7 @@
             <p class="max-w-[660px] mt-3.5 text-white/75 leading-[1.75]">{{ t.contact.text }}</p>
           </div>
           <div class="flex items-center gap-3 flex-wrap justify-end max-[1020px]:justify-start">
-            <a class="btn btn-primary" href="/login" target="_top">{{ t.contact.buttons.login }}</a>
+            <a class="btn btn-primary" :href="loginUrl" target="_top">{{ t.contact.buttons.login }}</a>
             <router-link class="btn border-white/20 bg-white/10 text-white" to="/codex-help">{{ t.contact.buttons.help }}</router-link>
             <button class="btn btn-green" type="button" @click="showModal = true">{{ t.contact.buttons.trial }}</button>
           </div>
@@ -271,7 +271,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { useHostUrl } from '@/composables/useHostUrl'
 
 const { t, toggleLang } = useI18n()
+const { loginUrl, registerUrl } = useHostUrl()
 const showModal = ref(false)
 </script>
