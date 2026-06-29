@@ -12,7 +12,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment: prod
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'dev')
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
 
     steps:
       - name: Checkout code
@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -31,8 +31,9 @@ jobs:
         run: npm run build
 
       - name: Setup ossutil
-        uses: manyuanrong/setup-ossutil@v3.0
+        uses: yizhoumo/setup-ossutil@v2
         with:
+          ossutil-version: 'latest'
           endpoint: oss-${{ secrets.OSS_REGION }}.aliyuncs.com
           access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
           access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
