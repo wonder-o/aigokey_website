@@ -45,7 +45,7 @@ jobs:
           echo "OSS Endpoint: oss-${{ secrets.OSS_REGION }}.aliyuncs.com"
 
       - name: Verify ossutil rm command (list files before delete)
-        run: ossutil ls oss://${{ secrets.OSS_BUCKET }}/ -r
+        run: ossutil ls oss://${{ secrets.OSS_BUCKET }}/
 
       - name: Delete existing files on OSS
         run: ossutil rm oss://${{ secrets.OSS_BUCKET }}/ -r -f
