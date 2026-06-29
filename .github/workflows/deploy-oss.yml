@@ -30,21 +30,15 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Install ossutil
-        run: |
-          curl -o ossutil https://gosspublic.alicdn.com/ossutil/v2/2.0.3/ossutil-2.0.3-linux-amd64.zip
-          unzip ossutil-2.0.3-linux-amd64.zip
-          chmod +x ossutil-2.0.3-linux-amd64/ossutil
-          sudo mv ossutil-2.0.3-linux-amd64/ossutil /usr/local/bin/
-
-      - name: Configure ossutil
-        run: |
-          ossutil config set --access-key-id ${{ secrets.OSS_ACCESS_KEY_ID }} --access-key-secret ${{ secrets.OSS_ACCESS_KEY_SECRET }} --region ${{ secrets.OSS_REGION }}
+      - name: Setup ossutil
+        uses: manyuanrong/setup-ossutil@v3.0
+        with:
+          endpoint: oss-${{ secrets.OSS_REGION }}.aliyuncs.com
+          access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: Delete existing files on OSS
-        run: |
-          ossutil rm oss://${{ secrets.OSS_BUCKET }}/ --recursive --force
+        run: ossutil rm oss://${{ secrets.OSS_BUCKET }}/ -r -f
 
       - name: Deploy to Alibaba Cloud OSS
-        run: |
-          ossutil cp ./dist/ oss://${{ secrets.OSS_BUCKET }}/ --recursive
+        run: ossutil cp ./dist/ oss://${{ secrets.OSS_BUCKET }}/ -r -f
