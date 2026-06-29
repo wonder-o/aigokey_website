@@ -1,0 +1,58 @@
+name: Debug OSS Configuration
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-oss:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print configuration (hidden)
+        run: |
+          echo "=== OSS Configuration ==="
+          echo ""
+          echo "OSS Region: ${{ secrets.OSS_REGION }}"
+          echo "OSS Bucket: ${{ secrets.OSS_BUCKET }}"
+          echo "OSS Endpoint: oss-${{ secrets.OSS_REGION }}.aliyuncs.com"
+          echo "Access Key ID (first 8 chars): ${ACCESS_KEY:0:8}"
+
+      - name: Setup ossutil
+        uses: yizhoumo/setup-ossutil@v2
+        with:
+          ossutil-version: 'latest'
+          endpoint: oss-${{ secrets.OSS_REGION }}.aliyuncs.com
+          access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      - name: Test ossutil connection
+        run: |
+          echo "=== Testing ossutil connection ==="
+          ossutil ls oss://${{ secrets.OSS_BUCKET }}/ -L
+
+      - name: Show access key info
+        run: |
+          echo "当前使用的 Access Key ID (前8位):"
+          echo "${{ secrets.OSS_ACCESS_KEY_ID }}" | cut -c1-8
+          echo ""
+          echo "本地测试成功的 Access Key ID: LTAI5t..."
+
+      - name: Compare configuration
+        run: |
+          echo "=== 配置对比 ==="
+          echo ""
+          echo "GitHub Secrets 中的配置:"
+          echo "  Bucket: ${{ secrets.OSS_BUCKET }}"
+          echo "  Region: ${{ secrets.OSS_REGION }}"
+          echo ""
+          echo "期望的配置:"
+          echo "  Bucket: aigokey-website"
+          echo "  Region: cn-shenzhen"
+          echo ""
+          if [ "${{ secrets.OSS_BUCKET }}" != "aigokey-website" ]; then
+            echo "❌ Bucket 名称不匹配!"
+            echo "   当前: ${{ secrets.OSS_BUCKET }}"
+            echo "   期望: aigokey-website"
+          else
+            echo "✅ Bucket 名称正确"
+          fi
