@@ -31,8 +31,9 @@ jobs:
         run: npm run build
 
       - name: Setup ossutil
-        uses: manyuanrong/setup-ossutil@v3.0
+        uses: yizhoumo/setup-ossutil@v2
         with:
+          ossutil-version: 'latest'
           endpoint: oss-${{ secrets.OSS_REGION }}.aliyuncs.com
           access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
           access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
