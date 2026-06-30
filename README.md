@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://wonder-o.github.io/aigokey_website/">🌐 在线预览</a> ·
-  <a href="https://wonder-o.github.io/aigokey_website/codex-help">📖 帮助文档</a>
+  <a href="https://www.aigokey.cn/">🌐 在线预览</a> ·
+  <a href="https://www.aigokey.cn/codex-help">📖 帮助文档</a>
 </p>
 
 ---
@@ -62,37 +62,47 @@ npm install
 # 启动开发服务器
 npm run dev
 
-# 构建（生成 dist/ 静态文件）
+# 构建（优化图片 → 类型检查 → SSG 构建 → WebP 转换 → HTML 目录生成）
 npm run build
 
 # 预览构建产物
 npm run preview
 ```
 
+构建流程：
+1. `optimize-images` — Logo/截图尺寸优化 + PNG 重编码
+2. `vue-tsc` — TypeScript 类型检查
+3. `vite-ssg build` — 静态站点生成，输出 HTML 到 `dist/`
+4. `postbuild` — 截图转 WebP、替换 HTML 引用、HTML 移入子目录
+
 ## 📦 部署
 
-构建后 `dist/` 目录包含完整的静态文件，可直接部署到：
+推送到 `main` 分支自动触发 GitHub Pages 部署。
 
-- **GitHub Pages** — 推送到 `main` 自动部署
-- **阿里云 OSS** — 通过 CI/CD 自动同步
+构建产物 `dist/` 是纯静态文件，也可部署到任意静态托管服务。
 
 ## 📁 项目结构
 
 ```
+public/
+└── assets/                  # 图片资源（PNG 原图，构建时优化）
+scripts/
+├── optimize-images.mjs      # 构建前图片压缩
+└── postbuild.mjs            # 构建后 WebP 转换 + HTML 目录生成
 src/
 ├── App.vue                  # 根组件
-├── main.ts                  # 入口（vite-ssg）
+├── main.ts                  # vite-ssg 入口
 ├── style.css                # 全局样式 + Tailwind
 ├── composables/
-│   ├── useHostUrl.ts        # iframe/父级域名适配
+│   ├── useHostUrl.ts        # iframe/父级域名适配（登录跳转）
 │   └── useI18n.ts           # 中英文切换
 ├── router/
-│   └── index.ts             # 路由配置
+│   └── index.ts             # 路由配置（history 模式）
 └── views/
-    ├── HomeView.vue         # 首页（SSG 直出 + SEO）
-    ├── CodexHelpView.vue    # 帮助文档（SSG 直出 + SEO）
-    ├── SubscriptionView.vue # 订阅说明
-    └── FreeTrialView.vue    # 免费试用
+    ├── HomeView.vue          # 首页（SSG + SEO）
+    ├── CodexHelpView.vue     # 帮助文档（SSG + SEO）
+    ├── SubscriptionView.vue  # 订阅说明
+    └── FreeTrialView.vue     # 免费试用
 ```
 
 ## 📄 许可
