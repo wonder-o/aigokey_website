@@ -5,7 +5,7 @@ import { join, basename, resolve } from 'path'
 const distDir = resolve('dist')
 const distAssets = join(distDir, 'assets')
 
-// Files to keep as PNG (icons, favicons)
+// Files to keep as PNG (icons, favicons, unhashed logo for favicon ref)
 const keepPng = new Set(['favicon-64x64.png', 'apple-touch-icon.png', 'aigokey-logo.png'])
 
 async function convertToWebp() {
@@ -30,25 +30,29 @@ async function convertToWebp() {
     }
   }
 
-  // Replace .png → .webp in HTML/JS/CSS (but preserve apple-touch-icon and favicon refs)
+  // Step 1: Replace all .png → .webp in HTML/JS/CSS
   function replaceInDir(dir) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name)
       if (entry.isDirectory()) replaceInDir(full)
       else if (entry.name.endsWith('.html') || entry.name.endsWith('.js') || entry.name.endsWith('.css')) {
         let content = readFileSync(full, 'utf-8')
-        // Replace PNG → WebP, except for favicon/logo/icon references
-        const newContent = content.replace(
-          /(?:aigokey-logo|apple-touch-icon|favicon)[^"']*\.png|\.png/g,
-          (match) => {
-            // Don't replace favicon/icon/logo PNGs
-            if (match.startsWith('aigokey-logo') || match.startsWith('apple-touch') || match.startsWith('favicon')) return match
-            return match.replace(/\.png$/, '.webp')
-          }
+        // Replace all .png → .webp
+        content = content.replace(/\.png/g, '.webp')
+        // Step 2: Restore exact favicon/icon/logo references back to .png
+        content = content.replace(
+          /href="\/assets\/aigokey-logo\.webp"/g,
+          'href="/assets/aigokey-logo.png"'
         )
-        if (newContent !== content) {
-          writeFileSync(full, newContent)
-        }
+        content = content.replace(
+          /href="\/assets\/apple-touch-icon\.webp"/g,
+          'href="/assets/apple-touch-icon.png"'
+        )
+        content = content.replace(
+          /href="\/assets\/favicon[^"]*\.webp"/g,
+          (match) => match.replace('.webp', '.png')
+        )
+        writeFileSync(full, content)
       }
     }
   }
