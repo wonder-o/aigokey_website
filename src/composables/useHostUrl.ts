@@ -5,6 +5,7 @@
  */
 export function useHostUrl() {
   function getHostOrigin(): string {
+    if (typeof document === 'undefined') return ''
     try {
       // Try to read the parent's origin when in an iframe
       if (window.parent !== window) {

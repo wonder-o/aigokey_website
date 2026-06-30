@@ -214,6 +214,19 @@
 </template>
 
 <script setup lang="ts">
+import { useHead } from '@unhead/vue'
+
+useHead({
+  title: 'Codex 安装使用教程手册 - AigoKey',
+  meta: [
+    { name: 'description', content: 'AigoKey Codex 安装使用教程手册，面向程序员用户和非程序员用户的 Codex App、Codex CLI、CC-Switch 安装与密钥导入指南。' },
+    { name: 'keywords', content: 'Codex, 安装教程, CC-Switch, VS Code Codex 插件, 密钥导入, AigoKey' },
+    { property: 'og:title', content: 'Codex 安装使用教程手册 - AigoKey' },
+    { property: 'og:description', content: '面向程序员用户和非程序员用户的 Codex App、Codex CLI、CC-Switch 安装与密钥导入指南。' },
+    { property: 'og:type', content: 'article' },
+  ],
+})
+
 function scrollTo(id: string) {
   const el = document.getElementById(id)
   if (el) {

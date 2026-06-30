@@ -18,6 +18,17 @@
   </main>
 </template>
 
+<script setup lang="ts">
+import { useHead } from '@unhead/vue'
+
+useHead({
+  title: '免费试用 - AigoKey',
+  meta: [
+    { name: 'description', content: 'AigoKey 新用户免费试用体验，扫码添加微信客服即可开通。' },
+  ],
+})
+</script>
+
 <style scoped>
 :root {
   color-scheme: light;

@@ -270,8 +270,21 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useI18n } from '@/composables/useI18n'
 import { useHostUrl } from '@/composables/useHostUrl'
+
+useHead({
+  title: 'AigoKey - Codex Agent + GPT + Image 稳定 AI 套餐',
+  meta: [
+    { name: 'description', content: 'AigoKey 是稳定可靠的 AI Token 套餐，5 元/天起，覆盖 Codex Agent、GPT 系列模型和 Image 系列模型，日卡、周卡和三档月卡可选，每天 30-200 美元额度。' },
+    { name: 'keywords', content: 'AigoKey, AI Token, Codex Agent, GPT, Image, AI套餐, 稳定AI, 日卡, 周卡, 月卡' },
+    { property: 'og:title', content: 'AigoKey - Codex Agent + GPT + Image 稳定 AI 套餐' },
+    { property: 'og:description', content: 'AigoKey 是稳定可靠的 AI Token 套餐，5 元/天起，覆盖 Codex Agent、GPT 系列模型和 Image 系列模型。' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:site_name', content: 'AigoKey' },
+  ],
+})
 
 const { t, toggleLang } = useI18n()
 const { loginUrl, registerUrl } = useHostUrl()

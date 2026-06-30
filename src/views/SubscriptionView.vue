@@ -117,6 +117,15 @@
 </template>
 
 <script setup lang="ts">
+import { useHead } from '@unhead/vue'
+
+useHead({
+  title: '订阅说明 - AigoKey',
+  meta: [
+    { name: 'description', content: 'AigoKey 订阅说明，日卡¥5/天、周卡¥48/周、月卡¥168-¥588/月，覆盖 Codex Agent、GPT 系列模型和 Image 系列模型。' },
+  ],
+})
+
 const plans = [
   { badge: '灵活', name: '日卡', price: '¥5', unit: '/ 天', sub: '适合当天赶需求、体验 Codex Agent，或集中处理一次代码、文案、图片和资料任务。', quotas: [{ label: '每日额度', value: '$30/天' }, { label: '周期额度', value: '$30/天' }], checks: ['当天需要当天开，不用长期承诺', '适合试用、急单和临时集中处理', '用低门槛体验轻量额度'] },
   { badge: '冲刺', name: '周卡', price: '¥48', unit: '/ 周', sub: '适合一周项目冲刺、连续改代码、批量出内容和集中做图，每天都有固定额度可用。', quotas: [{ label: '每日额度', value: '$50/天' }, { label: '周总额度', value: '$350/周' }], checks: ['比日卡更适合连续几天高频使用', '覆盖一周内多轮项目和内容任务', '短期预算清晰，用完再续更灵活'] },
