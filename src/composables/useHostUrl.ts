@@ -1,18 +1,19 @@
 /**
  * Constructs login/register URLs based on the host (parent) domain.
- * When running inside an iframe, reads the parent origin;
- * otherwise falls back to the current window origin.
+ * - Normal browser (non-iframe): if host starts with www., replace with llm.
+ *   Otherwise keep the original host and prepend llm. as subdomain.
+ * - iframe: read parent/referrer domain, same rule.
  */
 export function useHostUrl() {
   function getHostOrigin(): string {
     if (typeof document === 'undefined') return ''
     try {
-      // Try to read the parent's origin when in an iframe
+      // iframe: read parent's origin
       if (window.parent !== window) {
         return window.parent.location.origin
       }
     } catch {
-      // Cross-origin iframe: fall back to document.referrer or current origin
+      // Cross-origin iframe: fall back to referrer
       if (document.referrer) {
         const url = new URL(document.referrer)
         return url.origin
@@ -21,14 +22,41 @@ export function useHostUrl() {
     return window.location.origin
   }
 
+  /**
+   * Convert a host to llm subdomain.
+   * e.g. https://www.example.com  → https://llm.example.com
+   *       https://example.com      → https://llm.example.com
+   *       https://llm.example.com  → https://llm.example.com (no change)
+   */
+  function toLlmOrigin(origin: string): string {
+    try {
+      const url = new URL(origin)
+      const host = url.hostname
+
+      // Already llm. subdomain
+      if (host.startsWith('llm.')) return origin
+
+      // www. → replace with llm.
+      if (host.startsWith('www.')) {
+        url.hostname = 'llm.' + host.slice(4)
+      } else {
+        url.hostname = 'llm.' + host
+      }
+      return url.origin
+    } catch {
+      return origin
+    }
+  }
+
   const hostOrigin = getHostOrigin()
+  const llmOrigin = toLlmOrigin(hostOrigin)
 
   function buildUrl(path: string): string {
-    return `${hostOrigin}${path}`
+    return `${llmOrigin}${path}`
   }
 
   const loginUrl = buildUrl('/login')
   const registerUrl = buildUrl('/register')
 
-  return { hostOrigin, loginUrl, registerUrl, buildUrl }
+  return { hostOrigin, llmOrigin, loginUrl, registerUrl, buildUrl }
 }
