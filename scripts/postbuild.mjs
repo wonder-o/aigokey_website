@@ -37,10 +37,14 @@ async function convertToWebp() {
       if (entry.isDirectory()) replaceInDir(full)
       else if (entry.name.endsWith('.html') || entry.name.endsWith('.js') || entry.name.endsWith('.css')) {
         let content = readFileSync(full, 'utf-8')
-        // Replace PNG → WebP, except for icon/favicon references
+        // Replace PNG → WebP, except for favicon/logo/icon references
         const newContent = content.replace(
-          /(?<![a-z-])\.png(?!\s*['"]\s*(?:<!--|apple-touch|favicon))/g,
-          '.webp'
+          /(?:aigokey-logo|apple-touch-icon|favicon)[^"']*\.png|\.png/g,
+          (match) => {
+            // Don't replace favicon/icon/logo PNGs
+            if (match.startsWith('aigokey-logo') || match.startsWith('apple-touch') || match.startsWith('favicon')) return match
+            return match.replace(/\.png$/, '.webp')
+          }
         )
         if (newContent !== content) {
           writeFileSync(full, newContent)
