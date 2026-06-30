@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.DEPLOY_TARGET === 'pages' ? '/aigokey_website/' : '/',
+  base: '/',
   plugins: [vue()],
   resolve: {
     alias: {

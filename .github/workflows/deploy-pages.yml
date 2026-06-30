@@ -33,8 +33,6 @@ jobs:
 
       - name: Build project
         run: npm run build
-        env:
-          DEPLOY_TARGET: pages
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

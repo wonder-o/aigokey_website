@@ -5,7 +5,7 @@ import './style.css'
 
 export const createApp = ViteSSG(
   App,
-  { routes, base: import.meta.env.BASE_URL },
+  { routes },
   (ctx) => {
     // ctx.app, ctx.router, ctx.head 都可以直接用
   },
