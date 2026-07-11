@@ -15,6 +15,11 @@ export const routes = [
     component: () => import('@/views/CodexHelpView.vue'),
   },
   {
+    path: '/image-creation',
+    name: 'image-creation',
+    component: () => import('@/views/ImageCreationView.vue'),
+  },
+  {
     path: '/enterprise-service',
     name: 'enterprise-service',
     component: () => import('@/views/EnterpriseServiceView.vue'),

@@ -10,6 +10,7 @@
           <LanguageMenu />
           <a class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" :href="registerUrl" target="_top">{{ t.navButtons.register }}</a>
           <a class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" :href="loginUrl" target="_top">{{ t.navButtons.login }}</a>
+          <router-link class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" to="/image-creation">{{ t.navButtons.imageCreation }}</router-link>
           <router-link class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" to="/codex-help">{{ t.navButtons.help }}</router-link>
           <router-link class="btn btn-ghost max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" to="/enterprise-service">{{ t.navButtons.enterprise }}</router-link>
           <button class="btn btn-primary max-[720px]:min-h-[40px] max-[720px]:px-2.5 max-[720px]:text-[13px]" type="button" @click="showModal = true">{{ t.navButtons.trial }}</button>
@@ -47,7 +48,7 @@
             {{ t.codexHelp.prep.lead }}
           </p>
           <ul class="link-list">
-            <li>{{ t.codexHelp.prep.siteLabel }}<a href="https://www.aigokey.cc/" target="_blank" rel="noopener">https://www.aigokey.cc/</a></li>
+            <li>{{ t.codexHelp.prep.siteLabel }}<a href="https://www.aigokey.com/" target="_blank" rel="noopener">https://www.aigokey.com/</a></li>
             <li>{{ t.codexHelp.prep.homeBefore }}<router-link to="/">{{ t.codexHelp.prep.homeLink }}</router-link></li>
           </ul>
           <figure class="qr-figure">
@@ -199,7 +200,7 @@
             <h2>{{ t.codexHelp.support.head }}</h2>
           </div>
           <p>
-            {{ t.codexHelp.support.siteBefore }}<a href="https://www.aigokey.cc/" target="_blank" rel="noopener">https://www.aigokey.cc/</a>{{ t.codexHelp.support.homeBefore }}<router-link to="/">{{ t.codexHelp.support.homeLink }}</router-link>{{ t.codexHelp.support.homeAfter }}
+            {{ t.codexHelp.support.siteBefore }}<a href="https://www.aigokey.com/" target="_blank" rel="noopener">https://www.aigokey.com/</a>{{ t.codexHelp.support.homeBefore }}<router-link to="/">{{ t.codexHelp.support.homeLink }}</router-link>{{ t.codexHelp.support.homeAfter }}
           </p>
           <p>{{ t.codexHelp.support.text }}</p>
           <figure class="qr-figure">
