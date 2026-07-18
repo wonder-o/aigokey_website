@@ -75,6 +75,27 @@ function moveHtmlToDirs() {
     renameSync(join(distDir, file), join(dir, 'index.html'))
     console.log(`  ${file} → ${name}/index.html`)
   }
+
+  const codexHelpDir = join(distDir, 'codex-help')
+  const embedHtml = join(codexHelpDir, 'embed.html')
+  if (statSync(embedHtml, { throwIfNoEntry: false })) {
+    const embedDir = join(codexHelpDir, 'embed')
+    mkdirSync(embedDir, { recursive: true })
+    renameSync(embedHtml, join(embedDir, 'index.html'))
+    console.log('  codex-help/embed.html → codex-help/embed/index.html')
+  }
+
+  const blogDir = join(distDir, 'blog')
+  if (statSync(blogDir, { throwIfNoEntry: false })) {
+    const articleFiles = readdirSync(blogDir).filter(f => f.endsWith('.html') && f !== 'index.html')
+    for (const file of articleFiles) {
+      const name = basename(file, '.html')
+      const dir = join(blogDir, name)
+      mkdirSync(dir, { recursive: true })
+      renameSync(join(blogDir, file), join(dir, 'index.html'))
+      console.log(`  blog/${file} → blog/${name}/index.html`)
+    }
+  }
 }
 
 async function main() {

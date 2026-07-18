@@ -1,6 +1,6 @@
 <template>
-  <div class="codex-page">
-    <header class="sticky top-0 z-20 border-b border-line/80 bg-[#f8fbfd]/90 backdrop-blur-[18px]">
+  <div class="codex-page" :class="{ 'codex-page--embedded': embedded }">
+    <header v-if="!embedded" class="sticky top-0 z-20 border-b border-line/80 bg-[#f8fbfd]/90 backdrop-blur-[18px]">
       <div class="flex items-center justify-between gap-5 max-w-[1180px] min-h-[72px] mx-auto px-6 max-[720px]:flex-col max-[720px]:items-start max-[720px]:py-3.5 max-[720px]:px-4">
         <router-link to="/" class="inline-flex items-center gap-3 text-[21px] font-black" aria-label="AigoKey">
           <img src="/assets/aigokey-logo.png" alt="AigoKey Logo" class="w-[42px] h-[42px] rounded-[10px] object-cover shadow-[0_10px_24px_rgba(36,104,242,0.16)]" />
@@ -212,7 +212,7 @@
       </div>
     </main>
 
-    <footer class="py-8 px-6 text-[#667583] border-t border-line bg-white">
+    <footer v-if="!embedded" class="py-8 px-6 text-[#667583] border-t border-line bg-white">
       <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4 max-w-[1180px] mx-auto text-[14px] max-[720px]:grid-cols-1 max-[720px]:justify-items-center max-[720px]:text-center">
         <div class="inline-flex items-center gap-3 text-[21px] font-black text-[#111b24]">
           <img src="/assets/aigokey-logo.png" alt="AigoKey Logo" class="w-[42px] h-[42px] rounded-[10px] object-cover" />
@@ -246,6 +246,12 @@ import { useHead } from '@unhead/vue'
 import LanguageMenu from '@/components/LanguageMenu.vue'
 import { useI18n } from '@/composables/useI18n'
 import { useHostUrl } from '@/composables/useHostUrl'
+
+withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
 
 const { t } = useI18n()
 const { loginUrl, registerUrl } = useHostUrl()
@@ -289,6 +295,15 @@ async function copyText(text: string, event: Event) {
   font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
   line-height: 1.72;
   background: #f5f7fa;
+}
+
+.codex-page--embedded .hero {
+  padding-top: 32px;
+}
+
+.codex-page--embedded .guide-section,
+.codex-page--embedded .step-block {
+  scroll-margin-top: 16px;
 }
 
 a {

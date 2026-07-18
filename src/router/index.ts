@@ -15,6 +15,12 @@ export const routes = [
     component: () => import('@/views/CodexHelpView.vue'),
   },
   {
+    path: '/codex-help/embed',
+    name: 'codex-help-embed',
+    component: () => import('@/views/CodexHelpView.vue'),
+    props: { embedded: true },
+  },
+  {
     path: '/skills',
     name: 'skills',
     component: () => import('@/views/SkillsView.vue'),
@@ -43,5 +49,15 @@ export const routes = [
     path: '/free-trial',
     name: 'free-trial',
     component: () => import('@/views/FreeTrialView.vue'),
+  },
+  {
+    path: '/blog',
+    name: 'blog',
+    component: () => import('@/views/BlogView.vue'),
+  },
+  {
+    path: '/blog/:slug',
+    name: 'blog-article',
+    component: () => import('@/views/BlogArticleView.vue'),
   },
 ]
