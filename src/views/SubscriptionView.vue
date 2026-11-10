@@ -15,7 +15,7 @@
           </div>
           <aside class="range-board" :aria-label="page.hero.boardLabel">
             <header><span>{{ page.hero.boardLabel }}</span><i><span></span>LIVE</i></header>
-            <div class="range-labels" aria-hidden="true"><span>PERIOD</span><span>TIERS</span><span>PRICE</span><span>DAILY QUOTA</span></div>
+            <div class="range-labels" aria-hidden="true"><span>PERIOD</span><span>TIERS</span><span>PRICE</span><span>PLAN QUOTA</span></div>
             <div v-for="row in page.hero.boardRows" :key="row.period" class="range-row">
               <strong>{{ row.period }}</strong><span>{{ row.count }}</span><span>{{ row.price }}</span><b>{{ row.quota }}</b>
             </div>

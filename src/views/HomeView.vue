@@ -36,7 +36,7 @@
               </template>
 
               <template v-else-if="activeBanner.id === 'image'">
-                <div class="image-visual-main"><img src="/assets/image-creation-hero.png" alt="GPT-Image-2.5 creative preview" /><span><Sparkles :size="16" aria-hidden="true" /> GPT-Image-2.5</span></div>
+                <div class="image-visual-main"><img src="/assets/image-creation-hero.png" alt="image2.6 creative preview" /><span><Sparkles :size="16" aria-hidden="true" /> image2.6 · Gemini</span></div>
                 <div class="image-visual-card image-visual-card--top"><Images :size="20" aria-hidden="true" /><b>插画 · 漫画 · 彩漫</b><small>Visual ideas, rendered</small></div>
                 <div class="image-visual-card image-visual-card--bottom"><span class="image-swatch image-swatch--orange"></span><span class="image-swatch image-swatch--blue"></span><span class="image-swatch image-swatch--green"></span><b>广告图 · 电商图</b></div>
               </template>
@@ -122,6 +122,25 @@
               <h3 class="mt-[18px] text-[20px]">{{ card.title }}</h3>
               <p class="mt-[11px] text-muted text-[15px] leading-[1.72]">{{ card.text }}</p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="image-api-section px-6 py-[76px] max-[720px]:px-4" aria-labelledby="image-api-title">
+        <div class="image-api-inner">
+          <div class="image-api-copy">
+            <span class="image-api-eyebrow">{{ t.imageApi.eyebrow }}</span>
+            <h2 id="image-api-title">{{ t.imageApi.title }}</h2>
+            <p>{{ t.imageApi.desc }}</p>
+            <router-link class="image-api-link" to="/image-generation-config/">{{ t.imageApi.action }} <ArrowRight :size="17" aria-hidden="true" /></router-link>
+          </div>
+          <div class="image-api-data">
+            <div class="image-api-cost"><span>{{ t.imageApi.costLabel }}</span><strong>{{ t.imageApi.cost }}<small>{{ t.imageApi.costUnit }}</small></strong><p>{{ t.imageApi.costNote }}</p></div>
+            <dl>
+              <div><dt>{{ t.imageApi.modelsLabel }}</dt><dd>{{ t.imageApi.models }}</dd></div>
+              <div><dt>{{ t.imageApi.tasksLabel }}</dt><dd>{{ t.imageApi.tasks }}</dd></div>
+              <div><dt>{{ t.imageApi.batchLabel }}</dt><dd>{{ t.imageApi.batch }}</dd></div>
+            </dl>
           </div>
         </div>
       </section>
@@ -366,6 +385,26 @@ onBeforeUnmount(stopBanner)
 .home-band--promise,
 .home-band--faq { background: #ffffff; }
 
+.image-api-section { border-top: 1px solid #d5e8df; border-bottom: 1px solid #d5e8df; background: #f0f8f4; }
+.image-api-inner { display: grid; grid-template-columns: minmax(0,1fr) minmax(420px,.9fr); gap: 68px; align-items: center; width: min(100%,1180px); margin: 0 auto; }
+.image-api-eyebrow { color: #16835b; font: 850 12px/1.3 Consolas,monospace; letter-spacing: .04em; text-transform: uppercase; }
+.image-api-copy h2 { max-width: 650px; margin-top: 14px; color: #14293a; font-size: clamp(30px,3.8vw,44px); line-height: 1.13; font-weight: 900; }
+.image-api-copy > p { max-width: 620px; margin-top: 16px; color: #5d7283; font-size: 15px; line-height: 1.8; }
+.image-api-link { display: inline-flex; align-items: center; gap: 8px; min-height: 43px; margin-top: 23px; padding: 0 15px; border-radius: 6px; color: #fff; background: #168b5a; font-size: 13px; font-weight: 850; transition: background .2s ease,transform .2s ease; }
+.image-api-link:hover { color: #fff; background: #116f49; transform: translateY(-1px); }
+.image-api-link:focus-visible { outline: 3px solid rgba(22,139,90,.3); outline-offset: 3px; }
+.image-api-data { padding: 21px; border: 1px solid #cfe2d8; border-radius: 8px; background: rgba(255,255,255,.86); }
+.image-api-cost { padding: 2px 0 17px 17px; border-left: 3px solid #1ba66a; border-bottom: 1px solid #dce9e2; }
+.image-api-cost > span { display: block; color: #61766b; font-size: 12px; font-weight: 750; }
+.image-api-cost strong { display: block; margin-top: 5px; color: #087a50; font-size: 46px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.image-api-cost strong small { margin-left: 5px; color: #365c4b; font-size: 15px; font-weight: 800; }
+.image-api-cost p { margin-top: 6px; color: #7b8c83; font-size: 11px; line-height: 1.5; }
+.image-api-data dl { display: grid; margin: 4px 0 0; }
+.image-api-data dl > div { display: grid; grid-template-columns: 95px minmax(0,1fr); gap: 14px; padding: 13px 0; border-bottom: 1px solid #e5eee9; }
+.image-api-data dl > div:last-child { border-bottom: 0; }
+.image-api-data dt { color: #7b8c83; font-size: 11px; font-weight: 750; }
+.image-api-data dd { margin: 0; color: #234b39; font-size: 12px; font-weight: 850; text-align: right; }
+
 .home-card {
   border-color: #d8e4ea;
   background: #ffffff;
@@ -545,5 +584,7 @@ onBeforeUnmount(stopBanner)
 
 @media (max-width: 1020px) { .hero-carousel { min-height: 0; }.hero-slide { grid-template-columns: 1fr; gap: 38px; min-height: 0; padding-top: 52px; padding-bottom: 98px; }.hero-copy { max-width: 760px; }.hero-visual { width: min(100%,560px); min-height: 460px; justify-self: center; }.hero-controls { position: relative; bottom: auto; padding-top: 0; padding-bottom: 20px; } .volcengine-partner-layout { grid-template-columns: 1fr; gap: 35px; } }
 @media (max-width: 1020px) { .pricing-head { grid-template-columns: 1fr; gap: 16px; align-items: start; }.pricing-head p { max-width: 680px; }.plan-family-grid { grid-template-columns: 1fr 1fr; }.plan-family--month { grid-column: 1 / -1; }.plan-family--month .plan-tier-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }.plan-family--month .plan-tier-list::before { display: none; }.plan-family--month .plan-tier::before { left: -2px; }.enterprise-plan-rail { grid-template-columns: 48px minmax(0,1fr) auto; }.enterprise-plan-tags { grid-column: 2 / 3; }.enterprise-plan-link { grid-column: 3; grid-row: 1 / 3; } }
+@media (max-width: 1020px) { .image-api-inner { grid-template-columns: 1fr; gap: 30px; }.image-api-copy { max-width: 760px; }.image-api-data { width: min(100%,760px); } }
+@media (max-width: 560px) { .image-api-section { padding-top: 58px; padding-bottom: 58px; }.image-api-data { padding: 17px; }.image-api-cost strong { font-size: 40px; }.image-api-data dl > div { grid-template-columns: 78px minmax(0,1fr); gap: 9px; }.image-api-data dd { font-size: 11px; } }
 @media (max-width: 720px) { .hero-slide { padding-top: 38px; }.hero-copy h1 { font-size: clamp(42px,13vw,59px); }.hero-description { font-size: 16px; }.hero-proof-grid { grid-template-columns: 1fr; gap: 9px; }.hero-proof-grid > div { display: grid; grid-template-columns: minmax(130px,.8fr) 1.2fr; align-items: start; gap: 9px; min-height: auto; }.hero-proof-grid span { margin-top: 0; }.hero-visual { min-height: 400px; }.quota-visual { margin: 16px 16px 0; padding: 16px; }.quota-visual > strong { font-size: 38px; }.plan-visual-list { margin: 10px 16px 0; }.image-visual-main { inset: 23px 18px 18px 62px; }.image-visual-card--top { top: 39px; left: 13px; width: 156px; padding: 12px; }.image-visual-card--bottom { bottom: 20px; left: 13px; width: 177px; }.hero-controls [role='tab'] { padding: 0 7px; }.hero-controls [role='tab'].active b { display: none; }.volcengine-partner-band { padding-top: 62px; padding-bottom: 62px; }.volcengine-partner-steps article { grid-template-columns: 38px minmax(0, 1fr); }.pricing-section { padding: 68px 16px; }.plan-family-grid { grid-template-columns: 1fr; }.plan-family--month { grid-column: auto; }.plan-family--month .plan-tier-list { display: block; }.plan-family--month .plan-tier-list::before { display: block; }.plan-family--month .plan-tier::before { left: -13px; }.plan-family-summary { min-height: auto; }.enterprise-plan-rail { grid-template-columns: 42px minmax(0,1fr); padding: 18px; }.enterprise-plan-icon { width: 42px; height: 42px; }.enterprise-plan-copy { grid-column: 2; }.enterprise-plan-tags, .enterprise-plan-link { grid-column: 1 / -1; }.enterprise-plan-link { grid-row: auto; width: 100%; }.enterprise-plan-tags { margin-top: 2px; } }
 </style>
