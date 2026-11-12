@@ -18,6 +18,12 @@ export interface StudioRecord {
     resolution: string;
     duration: number;
     ratio: string;
+    outputFormat?: string;
+    frameCount?: number;
+    frameDurationMs?: number;
+    cameraMotion?: string;
+    sourceVideoUrl?: string;
+    geminiOutput?: "image" | "url";
   };
 }
 let database: Promise<IDBDatabase> | undefined;

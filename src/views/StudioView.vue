@@ -39,10 +39,18 @@ const {
   mode,
   form,
   models,
+  unsupportedIds,
+  modelCatalogTotal,
   model,
   connected,
   isGpt,
   isGemini,
+  isMuse,
+  isGrokImage,
+  supportsReference,
+  durationOptions,
+  resolutionOptions,
+  ratioOptions,
   examples,
   keyDialog,
   clearDialog,
@@ -67,6 +75,7 @@ const {
   playbackErrors,
   sessions,
   mediaSource,
+  isPdf,
   openKeyDialog,
   closeKeyDialog,
   selectKeyTab,
@@ -75,6 +84,7 @@ const {
   setExample,
   removeReference,
   pickFile,
+  pickAudioFile,
   dropFile,
   generate,
   resume,
@@ -197,6 +207,28 @@ const {
                   {{ item.label }}
                 </option>
               </select>
+              <span
+                v-if="connected && models.length === 0"
+                class="studio-model-diagnostic"
+              >
+                <template v-if="modelCatalogTotal === 0">
+                  网关返回的模型列表为空，请检查此 Key 的模型分组。
+                </template>
+                <template v-else-if="unsupportedIds.length">
+                  已收到 {{ modelCatalogTotal }} 个模型，但名称暂未识别：
+                  <code v-for="id in unsupportedIds.slice(0, 6)" :key="id">{{
+                    id
+                  }}</code>
+                  <span v-if="unsupportedIds.length > 6"
+                    >等 {{ unsupportedIds.length }} 个</span
+                  >
+                </template>
+                <template v-else>
+                  模型列表中没有识别到可用的{{
+                    mode === "image" ? "图片" : "视频"
+                  }}模型。
+                </template>
+              </span>
             </label>
             <label class="studio-field studio-prompt"
               ><span
@@ -222,7 +254,14 @@ const {
 
             <template v-if="!connected || models.length">
               <template v-if="mode === 'image'">
-                <label class="studio-field"
+                <label v-if="isGemini" class="studio-field"
+                  ><span>画面比例</span
+                  ><select v-model="form.ratio" aria-label="画面比例" :disabled="!!submitting">
+                    <option v-for="ratio in ratioOptions" :key="ratio" :value="ratio">{{ ratio }}</option>
+                  </select></label
+                >
+                <label v-if="isGemini" class="studio-field"><span>结果交付</span><select v-model="form.geminiOutput" aria-label="结果交付" :disabled="!!submitting"><option value="image">图片 Base64</option><option value="url">图片 URL（AIGOKEY 扩展）</option></select></label>
+                <label v-else-if="isGpt" class="studio-field"
                   ><span>尺寸</span
                   ><select
                     v-model="form.size"
@@ -232,23 +271,24 @@ const {
                     <option value="1024x1024">1:1 · 1024 × 1024</option>
                     <option value="1536x1024">3:2 · 1536 × 1024</option>
                     <option value="1024x1536">2:3 · 1024 × 1536</option>
-                    <option v-if="!isGemini" value="auto">自动尺寸</option>
                   </select></label
                 >
-                <div class="studio-field-row">
+                <label v-else-if="isGrokImage" class="studio-field"
+                  ><span>返回格式</span
+                  ><select v-model="form.outputFormat" aria-label="返回格式" :disabled="!!submitting">
+                    <option value="png">PNG</option>
+                  </select></label
+                >
+                <div v-if="isGemini" class="studio-field-row">
                   <label class="studio-field"
-                    ><span>质量</span
+                    ><span>图片规格</span
                     ><select
                       v-model="form.quality"
-                      aria-label="质量"
-                      :disabled="
-                        !!submitting || (connected && !isGpt && !isGemini)
-                      "
+                      aria-label="图片规格"
+                      :disabled="!!submitting"
                     >
-                      <option value="auto">自动</option>
-                      <option value="low">低</option>
-                      <option value="medium">中</option>
-                      <option value="high">高</option>
+                      <option value="auto">1K</option>
+                      <option value="high">2K</option>
                     </select></label
                   >
                   <label class="studio-field"
@@ -256,33 +296,32 @@ const {
                     ><select
                       v-model="form.count"
                       aria-label="数量"
-                      :disabled="!!submitting || isGemini || form.stream"
+                      :disabled="!!submitting"
                     >
                       <option :value="1">1 张</option>
-                      <option :value="2">2 张</option>
-                      <option :value="3">3 张</option>
-                      <option :value="4">4 张</option>
                     </select></label
                   >
                 </div>
+                <div v-else-if="isGpt" class="studio-field-row">
+                  <label class="studio-field"><span>质量</span><select v-model="form.quality" aria-label="质量" :disabled="!!submitting"><option value="auto">自动</option><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select></label>
+                  <label class="studio-field"><span>格式</span><select v-model="form.outputFormat" aria-label="输出格式" :disabled="!!submitting"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option><option value="gif">GIF</option><option value="svg">SVG</option><option value="pdf">PDF</option></select></label>
+                </div>
+                <div v-if="isGpt && form.outputFormat === 'gif'" class="studio-field-row">
+                  <label class="studio-field"><span>帧数</span><select v-model="form.frameCount" aria-label="GIF 帧数" :disabled="!!submitting"><option v-for="frameIndex in 15" :key="frameIndex + 1" :value="frameIndex + 1">{{ frameIndex + 1 }} 帧</option></select></label>
+                  <label class="studio-field"><span>帧时长</span><select v-model="form.frameDurationMs" aria-label="GIF 帧时长" :disabled="!!submitting"><option :value="100">100 毫秒</option><option :value="180">180 毫秒</option><option :value="250">250 毫秒</option><option :value="500">500 毫秒</option></select></label>
+                </div>
+                <label v-if="isGpt" class="studio-field"><span>数量</span><select v-model="form.count" aria-label="数量" :disabled="!!submitting || form.stream"><option :value="1">1 张</option><option :value="2">2 张</option><option :value="3">3 张</option><option :value="4">4 张</option></select></label>
               </template>
               <template v-else>
                 <div class="studio-field-row">
-                  <label class="studio-field"
+                  <label v-if="resolutionOptions.length" class="studio-field"
                     ><span>分辨率</span
                     ><select
                       v-model="form.resolution"
                       aria-label="分辨率"
                       :disabled="!!submitting"
                     >
-                      <option value="480p">480p</option>
-                      <option value="720p">720p</option>
-                      <option
-                        v-if="model?.protocol === 'seedance'"
-                        value="1080p"
-                      >
-                        1080p
-                      </option>
+                      <option v-for="resolution in resolutionOptions" :key="resolution" :value="resolution">{{ resolution }}</option>
                     </select></label
                   >
                   <label class="studio-field"
@@ -292,10 +331,7 @@ const {
                       aria-label="时长"
                       :disabled="!!submitting"
                     >
-                      <option :value="5">5 秒</option>
-                      <option :value="6">6 秒</option>
-                      <option :value="10">10 秒</option>
-                      <option :value="15">15 秒</option>
+                      <option v-for="duration in durationOptions" :key="duration" :value="duration">{{ duration }} 秒</option>
                     </select></label
                   >
                 </div>
@@ -306,14 +342,14 @@ const {
                     aria-label="画面比例"
                     :disabled="!!submitting"
                   >
-                    <option value="16:9">16:9 · 横屏</option>
-                    <option value="9:16">9:16 · 竖屏</option>
-                    <option value="1:1">1:1 · 方形</option>
+                    <option v-for="ratio in ratioOptions" :key="ratio" :value="ratio">{{ ratio }}</option>
                   </select></label
                 >
               </template>
 
-              <div class="studio-field">
+              <label v-if="mode === 'video' && isMuse" class="studio-field"><span>镜头运动</span><select v-model="form.cameraMotion" aria-label="镜头运动" :disabled="!!submitting"><option value="zoom_in">缓慢推进</option><option value="pan_left">向左摇镜</option><option value="orbit">环绕</option><option value="tracking_shot">跟拍</option><option value="static">固定镜头</option></select></label>
+
+              <div v-if="supportsReference" class="studio-field">
                 <span
                   >{{ mode === "image" ? "参考图" : "首帧图" }}
                   <span class="studio-optional"
@@ -328,7 +364,7 @@ const {
                   @drop.prevent="dropFile"
                   ><Upload :size="17" /><span
                     >点击上传或拖入图片<small
-                      >JPG、PNG、WebP · 最大 20 MB</small
+                      >JPG、PNG、WebP · 最大 20 MB{{ mode === 'video' && model?.protocol === 'seedance' ? ' · 服务端素材上传' : '' }}</small
                     ></span
                   ><input
                     type="file"
@@ -356,6 +392,17 @@ const {
                   </button>
                 </div>
               </div>
+              <p v-else-if="mode === 'video' && connected" class="studio-microcopy">
+                当前模型使用文生视频接口；需要参考图时，请切换到支持图生视频的模型。
+              </p>
+              <label v-if="mode === 'video' && model?.protocol === 'seedance' && model.id.toLowerCase().includes('coke')" class="studio-field">
+                <span>参考音频 <span class="studio-optional">可选 · 上传至 AIGOKEY</span></span>
+                <span class="studio-upload studio-audio-upload"><Upload :size="16" /><span>{{ form.audioReference?.name || '选择参考音频' }}<small>音频文件 · 最大 50 MB</small></span><input type="file" accept="audio/*" :disabled="!!submitting" aria-label="上传参考音频" @change="pickAudioFile" /></span>
+              </label>
+              <label v-if="mode === 'video' && isMuse" class="studio-field">
+                <span>续写源视频 <span class="studio-optional">可选 · Muse 长视频型号</span></span>
+                <input v-model="form.sourceVideoUrl" type="url" placeholder="https://example.com/source-video.mp4" :disabled="!!submitting" />
+              </label>
               <label
                 v-if="mode === 'image' && (!connected || isGpt)"
                 class="studio-checkbox"
@@ -467,8 +514,15 @@ const {
                 :key="index"
                 class="studio-result"
               >
+                <object
+                  v-if="selected.kind === 'image' && isPdf(item)"
+                  :data="mediaSource(item)"
+                  type="application/pdf"
+                  class="studio-pdf-preview"
+                  aria-label="PDF 图片生成结果"
+                />
                 <img
-                  v-if="selected.kind === 'image'"
+                  v-else-if="selected.kind === 'image'"
                   :src="mediaSource(item)"
                   :alt="selected.prompt"
                   referrerpolicy="no-referrer"
@@ -653,8 +707,13 @@ const {
               :aria-label="`查看作品：${item.prompt}`"
               @click="selectRecord(item)"
             >
+              <span
+                v-if="item.kind === 'image' && item.media[0] && isPdf(item.media[0])"
+                class="studio-history-file"
+                aria-label="PDF 文件"
+              >PDF</span>
               <img
-                v-if="item.kind === 'image' && item.media[0]"
+                v-else-if="item.kind === 'image' && item.media[0]"
                 :src="mediaSource(item.media[0])"
                 alt=""
                 loading="lazy"

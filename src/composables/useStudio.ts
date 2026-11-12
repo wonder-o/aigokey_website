@@ -14,7 +14,7 @@ import {
   ApiError,
   cacheMedia,
   keyFingerprint,
-  loadModels,
+  loadModelCatalog,
   mediaUrls,
   pollTask,
   submitGeneration,
@@ -78,6 +78,13 @@ const defaults = () => ({
   duration: 6,
   ratio: "16:9",
   stream: false,
+  cameraMotion: "",
+  outputFormat: "png",
+  frameCount: 8,
+  frameDurationMs: 100,
+  geminiOutput: "image" as "image" | "url",
+  audioReference: undefined as File | undefined,
+  sourceVideoUrl: "",
   reference: undefined as File | undefined,
   referenceUrl: "",
 });
@@ -87,20 +94,82 @@ export function useStudio() {
   const mode = ref<MediaKind>("image");
   const forms = reactive({ image: defaults(), video: defaults() });
   const sessions = reactive({
-    image: { key: "", fingerprint: "", models: [] as StudioModel[] },
-    video: { key: "", fingerprint: "", models: [] as StudioModel[] },
+    image: {
+      key: "",
+      fingerprint: "",
+      models: [] as StudioModel[],
+      unsupportedIds: [] as string[],
+      total: 0,
+    },
+    video: {
+      key: "",
+      fingerprint: "",
+      models: [] as StudioModel[],
+      unsupportedIds: [] as string[],
+      total: 0,
+    },
   });
   const form = computed(() => forms[mode.value]);
   const session = computed(() => sessions[mode.value]);
   const models = computed(() =>
     session.value.models.filter((model) => model.kind === mode.value),
   );
+  const unsupportedIds = computed(() => session.value.unsupportedIds);
+  const modelCatalogTotal = computed(() => session.value.total);
   const model = computed(() =>
     models.value.find((item) => item.id === form.value.model),
   );
   const connected = computed(() => !!session.value.key);
-  const isGpt = computed(() => !!model.value?.id.startsWith("gpt-image-"));
+  const isGpt = computed(() => model.value?.protocol === "image");
   const isGemini = computed(() => model.value?.protocol === "gemini");
+  const isMuse = computed(() => model.value?.protocol === "muse-video");
+  const isGrokImage = computed(() => model.value?.protocol === "grok-image");
+  const supportsReference = computed(() => {
+    if (!connected.value || mode.value === "image") return true;
+    if (
+      model.value?.protocol === "seedance" ||
+      model.value?.protocol === "muse-video"
+    )
+      return true;
+    if (model.value?.protocol === "grok-video")
+      return /video[-_.]1[._]5(?:$|[-_.])/i.test(model.value.id);
+    return false;
+  });
+  const durationOptions = computed(() => {
+    if (mode.value !== "video" || !model.value) return [5, 6, 10, 15];
+    const leaf = model.value.id.split(/[/:]/).at(-1) || model.value.id;
+    if (model.value.protocol === "seedance")
+      return Array.from({ length: 12 }, (_, index) => index + 4);
+    if (model.value.protocol === "muse-video") {
+      const longModel = leaf.match(/-(20|30|40|50|60)s$/i);
+      return longModel
+        ? [Number(longModel[1])]
+        : Array.from({ length: 10 }, (_, index) => index + 1);
+    }
+    return Array.from({ length: 15 }, (_, index) => index + 1);
+  });
+  const resolutionOptions = computed(() => {
+    if (mode.value !== "video" || !connected.value || !model.value)
+      return ["480p", "720p"];
+    if (model.value.protocol === "grok-video")
+      return ["480p", "720p", "1080p"];
+    if (model.value.protocol === "seedance") return ["720p"];
+    return [];
+  });
+  const ratioOptions = computed(() => {
+    if (mode.value === "image")
+      return isGemini.value ? ["1:1", "16:9", "9:16", "3:2", "2:3"] : [];
+    if (!model.value) return ["16:9", "9:16", "1:1"];
+    if (model.value.protocol === "grok-video")
+      return ["16:9", "9:16", "1:1", "4:3", "3:4", "2:3", "3:2"];
+    if (model.value.protocol === "seedance")
+      return model.value.id.toLowerCase().includes("canopus")
+        ? ["16:9", "9:16", "1:1", "4:3", "3:4"]
+        : ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"];
+    if (model.value.protocol === "muse-video")
+      return ["16:9", "9:16", "1:1", "4:3", "3:4"];
+    return ["16:9", "9:16", "1:1"];
+  });
   const keyDialog = ref<HTMLDialogElement>();
   const clearDialog = ref<HTMLDialogElement>();
   const keyMode = ref<MediaKind>("image");
@@ -161,6 +230,9 @@ export function useStudio() {
     if (!objectUrls.has(blob)) objectUrls.set(blob, URL.createObjectURL(blob));
     return objectUrls.get(blob)!;
   }
+  function isPdf(item: StudioRecord["media"][number]) {
+    return item.blob?.type === "application/pdf" || /\.pdf(?:$|[?#])/i.test(item.url);
+  }
   async function persist(record: StudioRecord) {
     try {
       await saveRecord(structuredClone(toRaw(record)));
@@ -201,19 +273,25 @@ export function useStudio() {
     remember: boolean,
     signal?: AbortSignal,
   ) {
-    const [available, fingerprint] = await Promise.all([
-      loadModels(key, signal),
+    const [catalog, fingerprint] = await Promise.all([
+      loadModelCatalog(key, signal),
       keyFingerprint(key),
     ]);
     if (disposed || signal?.aborted) return;
-    sessions[kind] = { key, models: available, fingerprint };
+    sessions[kind] = {
+      key,
+      models: catalog.models,
+      fingerprint,
+      unsupportedIds: catalog.unsupportedIds,
+      total: catalog.total,
+    };
     if (
-      !available.some(
+      !catalog.models.some(
         (item) => item.id === forms[kind].model && item.kind === kind,
       )
     )
       forms[kind].model =
-        available.find((item) => item.kind === kind)?.id || "";
+        catalog.models.find((item) => item.kind === kind)?.id || "";
     try {
       if (remember) localStorage.setItem(savedKeyName(kind), key);
       else localStorage.removeItem(savedKeyName(kind));
@@ -260,7 +338,13 @@ export function useStudio() {
     const kind = keyMode.value;
     for (const record of history.value)
       if (record.kind === kind) polls.get(record.id)?.abort();
-    sessions[kind] = { key: "", fingerprint: "", models: [] };
+    sessions[kind] = {
+      key: "",
+      fingerprint: "",
+      models: [],
+      unsupportedIds: [],
+      total: 0,
+    };
     forms[kind].model = "";
     try {
       localStorage.removeItem(savedKeyName(kind));
@@ -297,6 +381,24 @@ export function useStudio() {
     removeReference();
     form.value.reference = file;
     form.value.referenceUrl = URL.createObjectURL(file);
+  }
+  function setAudioReference(file?: File) {
+    if (!file) return;
+    error.value = "";
+    if (!file.type.startsWith("audio/")) {
+      error.value = "请选择音频文件。";
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      error.value = "参考音频不能超过 50 MB。";
+      return;
+    }
+    form.value.audioReference = file;
+  }
+  function pickAudioFile(event: Event) {
+    const input = event.target as HTMLInputElement;
+    setAudioReference(input.files?.[0]);
+    input.value = "";
   }
   function pickFile(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -350,7 +452,8 @@ export function useStudio() {
     playbackErrors.delete(cacheKey);
     try {
       const blob =
-        record.protocol === "grok-video" && record.taskId
+        ["grok-video", "seedance", "muse-video"].includes(record.protocol) &&
+        record.taskId
           ? await videoContent(record.taskId, credential.key)
           : await cacheMedia(item.url);
       if (!blob)
@@ -424,12 +527,15 @@ export function useStudio() {
           record.state = "failed";
           throw cause;
         }
-        const urls = mediaUrls(body, record.kind);
+        const urls = mediaUrls(body, record.kind, record.settings.outputFormat);
         if (urls.length) {
           await finish(record, urls, credential.key);
           return;
         }
-        if (done && record.protocol === "grok-video") {
+        if (
+          done &&
+          ["grok-video", "seedance", "muse-video"].includes(record.protocol)
+        ) {
           const blob = await videoContent(record.taskId, credential.key);
           if (blob) {
             record.state = "completed";
@@ -500,11 +606,17 @@ export function useStudio() {
       settings: {
         size: values.size,
         quality: values.quality,
+        outputFormat: values.outputFormat,
+        frameCount: values.frameCount,
+        frameDurationMs: values.frameDurationMs,
+        geminiOutput: values.geminiOutput,
         count:
           chosenModel.protocol === "gemini" || values.stream ? 1 : values.count,
         resolution: values.resolution,
         duration: values.duration,
         ratio: values.ratio,
+        cameraMotion: values.cameraMotion,
+        sourceVideoUrl: values.sourceVideoUrl,
       },
     };
     history.value.unshift(record);
@@ -533,7 +645,7 @@ export function useStudio() {
         live.state = "failed";
         throw cause;
       }
-      const urls = mediaUrls(body, kind);
+      const urls = mediaUrls(body, kind, values.outputFormat);
       live.taskId = taskId(body, chosenModel.protocol);
       if (urls.length) await finish(live, urls, credential.key);
       else {
@@ -576,9 +688,11 @@ export function useStudio() {
   }
   function reuse(record: StudioRecord) {
     mode.value = record.kind;
+    removeReference();
     Object.assign(forms[record.kind], record.settings, {
       prompt: record.prompt,
       stream: false,
+      audioReference: undefined,
     });
     if (sessions[record.kind].models.some((item) => item.id === record.model))
       forms[record.kind].model = record.model;
@@ -591,7 +705,7 @@ export function useStudio() {
     const credential = sessions[record.kind];
     if (
       !blob &&
-      record.protocol === "grok-video" &&
+      ["grok-video", "seedance", "muse-video"].includes(record.protocol) &&
       record.taskId &&
       credential.fingerprint === record.fingerprint
     )
@@ -607,14 +721,19 @@ export function useStudio() {
       return;
     }
     const url = URL.createObjectURL(blob);
-    const ext =
-      record.kind === "video"
-        ? "mp4"
-        : blob.type.includes("jpeg")
-          ? "jpg"
-          : blob.type.includes("webp")
-            ? "webp"
-            : "png";
+    const ext = record.kind === "video"
+      ? "mp4"
+      : blob.type === "application/pdf"
+        ? "pdf"
+        : blob.type === "image/svg+xml"
+          ? "svg"
+          : blob.type === "image/gif"
+            ? "gif"
+            : blob.type.includes("jpeg")
+              ? "jpg"
+              : blob.type.includes("webp")
+                ? "webp"
+                : "png";
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `aigokey-${record.id.slice(0, 8)}-${index + 1}.${ext}`;
@@ -658,11 +777,39 @@ export function useStudio() {
   });
   watch(
     () => form.value.model,
-    () => {
+    (newModel, oldModel) => {
       form.value.stream = false;
       if (isGemini.value) {
         form.value.count = 1;
         if (form.value.size === "auto") form.value.size = "1024x1024";
+      }
+      if (isGrokImage.value) {
+        form.value.count = 1;
+        form.value.outputFormat = "png";
+      }
+      if (isMuse.value) {
+        form.value.count = 1;
+        form.value.duration = durationOptions.value[0] || 10;
+        form.value.cameraMotion = "zoom_in";
+      }
+      if (
+        model.value?.protocol !== "seedance" ||
+        !model.value.id.toLowerCase().includes("coke")
+      )
+        form.value.audioReference = undefined;
+      if (model.value?.protocol !== "muse-video")
+        form.value.sourceVideoUrl = "";
+      if (!supportsReference.value && form.value.reference) removeReference();
+      if (newModel && oldModel && model.value) {
+        if (!ratioOptions.value.includes(form.value.ratio))
+          form.value.ratio = ratioOptions.value[0] || "16:9";
+        if (
+          resolutionOptions.value.length &&
+          !resolutionOptions.value.includes(form.value.resolution)
+        )
+          form.value.resolution = resolutionOptions.value[0];
+        if (!durationOptions.value.includes(form.value.duration))
+          form.value.duration = durationOptions.value[0] || 5;
       }
       if (
         model.value?.protocol === "grok-video" &&
@@ -675,6 +822,12 @@ export function useStudio() {
     () => form.value.stream,
     (enabled) => {
       if (enabled) form.value.count = 1;
+    },
+  );
+  watch(
+    () => form.value.outputFormat,
+    (format) => {
+      if (format !== "png") form.value.stream = false;
     },
   );
   onMounted(async () => {
@@ -720,10 +873,18 @@ export function useStudio() {
     form,
     session,
     models,
+    unsupportedIds,
+    modelCatalogTotal,
     model,
     connected,
     isGpt,
     isGemini,
+    isMuse,
+    isGrokImage,
+    supportsReference,
+    durationOptions,
+    resolutionOptions,
+    ratioOptions,
     examples,
     keyDialog,
     clearDialog,
@@ -748,6 +909,7 @@ export function useStudio() {
     playbackErrors,
     sessions,
     mediaSource,
+    isPdf,
     openKeyDialog,
     closeKeyDialog,
     selectKeyTab,
@@ -755,6 +917,7 @@ export function useStudio() {
     disconnect,
     setExample,
     removeReference,
+    pickAudioFile,
     pickFile,
     dropFile,
     generate,

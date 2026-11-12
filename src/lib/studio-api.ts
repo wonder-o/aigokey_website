@@ -2,12 +2,23 @@ export const API_BASE = "https://llm.aigokey.com/v1";
 export const CONSOLE_ORIGIN = new URL(API_BASE).origin;
 const API_PROXY = "/studio-api";
 export type MediaKind = "image" | "video";
-export type Protocol = "image" | "gemini" | "grok-video" | "seedance";
+export type Protocol =
+  | "image"
+  | "gemini"
+  | "grok-image"
+  | "grok-video"
+  | "seedance"
+  | "muse-video";
 export interface StudioModel {
   id: string;
   label: string;
   kind: MediaKind;
   protocol: Protocol;
+}
+export interface StudioModelCatalog {
+  models: StudioModel[];
+  unsupportedIds: string[];
+  total: number;
 }
 export interface GenerationOptions {
   model: StudioModel;
@@ -19,7 +30,14 @@ export interface GenerationOptions {
   duration: number;
   ratio: string;
   stream: boolean;
+  cameraMotion?: string;
+  outputFormat?: string;
+  frameCount?: number;
+  frameDurationMs?: number;
+  geminiOutput?: "image" | "url";
   reference?: File;
+  audioReference?: File;
+  sourceVideoUrl?: string;
 }
 type Json = Record<string, any>;
 
@@ -34,30 +52,51 @@ export class ApiError extends Error {
 }
 
 export function describeModel(id: string): StudioModel | undefined {
-  if (/^gpt-image-|^grok-imagine-(image|edit)/i.test(id))
+  const modelName = id.split(/[/:]/).at(-1) || id;
+  if (
+    /^gpt-image-/i.test(modelName)
+  )
     return {
       id,
-      label: id
-        .replace(/^gpt-image-/i, "GPT Image ")
-        .replace(/^grok-imagine-image/i, "Grok Image"),
+      label: modelName.replace(/^gpt-image-/i, "GPT Image "),
       kind: "image",
       protocol: "image",
     };
-  if (/^gemini-.*image/i.test(id))
-    return { id, label: id, kind: "image", protocol: "gemini" };
-  if (/^grok-imagine-video/i.test(id))
+  if (/^grok-imagine-image(?:$|[-_.:])/i.test(modelName))
     return {
       id,
-      label: id.replace("grok-imagine-video", "Grok Video"),
+      label: modelName
+        .replace(/^grok-imagine-image/i, "Grok Image ")
+        .replace(/^Grok Image[-_.]/, "Grok Image "),
+      kind: "image",
+      protocol: "grok-image",
+    };
+  if (/^gemini[-_.].*(?:image|banana)/i.test(modelName))
+    return { id, label: modelName, kind: "image", protocol: "gemini" };
+  if (/^grok-imagine-video(?:$|[-_.:])/i.test(modelName))
+    return {
+      id,
+      label: modelName
+        .replace(/^grok-imagine-video/i, "Grok Video")
+        .replace(/^Grok Video[-_.]/, "Grok Video "),
       kind: "video",
       protocol: "grok-video",
     };
-  if (/^doubao-seedance-/i.test(id))
+  if (/^(?:doubao[-_.])?seedance[-_.]/i.test(modelName))
     return {
       id,
-      label: id.replace("doubao-seedance-", "Seedance "),
+      label: modelName.replace(/^(?:doubao[-_.])?seedance[-_.]/i, "Seedance "),
       kind: "video",
       protocol: "seedance",
+    };
+  if (/^seedance\d/i.test(modelName))
+    return { id, label: modelName, kind: "video", protocol: "seedance" };
+  if (/^muse-video(?:$|[-_.])/i.test(modelName))
+    return {
+      id,
+      label: modelName.replace(/^muse-video/i, "Muse Video"),
+      kind: "video",
+      protocol: "muse-video",
     };
 }
 
@@ -67,7 +106,14 @@ function errorMessage(body: Json, fallback: string) {
     : body.error?.message || body.message || fallback;
 }
 
-async function request(path: string, key: string, init: RequestInit = {}) {
+type AuthScheme = "bearer" | "google";
+
+async function request(
+  path: string,
+  key: string,
+  init: RequestInit = {},
+  authScheme: AuthScheme = "bearer",
+) {
   let response: Response;
   try {
     response = await fetch(`${API_PROXY}${path}`, {
@@ -75,7 +121,9 @@ async function request(path: string, key: string, init: RequestInit = {}) {
       cache: "no-store",
       credentials: "omit",
       headers: {
-        Authorization: `Bearer ${key}`,
+        ...(authScheme === "google"
+          ? { "x-goog-api-key": key }
+          : { Authorization: `Bearer ${key}` }),
         ...(init.body instanceof FormData
           ? {}
           : { "Content-Type": "application/json" }),
@@ -116,8 +164,9 @@ async function jsonRequest(
   path: string,
   key: string,
   init?: RequestInit,
+  authScheme: AuthScheme = "bearer",
 ): Promise<Json> {
-  const response = await request(path, key, init);
+  const response = await request(path, key, init, authScheme);
   if (!(response.headers.get("content-type") || "").includes("json"))
     throw new ApiError(
       "生成服务未启动。请使用 npm run dev 或 npm run studio 启动此页面。",
@@ -125,20 +174,30 @@ async function jsonRequest(
   return response.json();
 }
 
-export async function loadModels(key: string, signal?: AbortSignal) {
+export async function loadModelCatalog(
+  key: string,
+  signal?: AbortSignal,
+): Promise<StudioModelCatalog> {
   const body = await jsonRequest("/v1/models", key, { signal });
   if (!Array.isArray(body.data))
     throw new ApiError("模型列表格式不正确，请检查网关服务。");
-  return [
-    ...new Map(
-      body.data
-        .map((item: Json) =>
-          typeof item.id === "string" ? describeModel(item.id) : undefined,
-        )
-        .filter((item: StudioModel | undefined): item is StudioModel => !!item)
-        .map((item: StudioModel) => [item.id, item]),
-    ).values(),
-  ] as StudioModel[];
+  const models: StudioModel[] = [];
+  const unsupportedIds: string[] = [];
+  for (const item of body.data) {
+    if (typeof item?.id !== "string") continue;
+    const model = describeModel(item.id);
+    if (model) models.push(model);
+    else unsupportedIds.push(item.id);
+  }
+  return {
+    models: [...new Map(models.map((item) => [item.id, item])).values()],
+    unsupportedIds: [...new Set(unsupportedIds)],
+    total: body.data.length,
+  };
+}
+
+export async function loadModels(key: string, signal?: AbortSignal) {
+  return (await loadModelCatalog(key, signal)).models;
 }
 
 export async function keyFingerprint(key: string) {
@@ -151,13 +210,18 @@ export async function keyFingerprint(key: string) {
   ).join("");
 }
 
-export function fileDataUrl(file: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("无法读取参考图，请重新选择。"));
-    reader.readAsDataURL(file);
-  });
+export async function fileDataUrl(file: Blob): Promise<string> {
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize)
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+    const base64 = btoa(binary);
+    return `data:${file.type || "application/octet-stream"};base64,${base64}`;
+  } catch {
+    throw new Error("无法读取参考图，请重新选择。");
+  }
 }
 
 export function safeMediaUrl(value: unknown): string | undefined {
@@ -165,9 +229,7 @@ export function safeMediaUrl(value: unknown): string | undefined {
   if (/^\/v1\/videos\/[a-z\d_-]+\/content$/i.test(value))
     return CONSOLE_ORIGIN + value;
   if (
-    /^data:(image\/(png|jpeg|webp)|video\/mp4);base64,[a-z\d+/=\s]+$/i.test(
-      value,
-    )
+    /^data:(image\/(png|jpeg|webp|gif|svg\+xml)|application\/pdf|video\/mp4);base64,[a-z\d+/=\s]+$/i.test(value)
   )
     return value;
   try {
@@ -179,7 +241,27 @@ export function safeMediaUrl(value: unknown): string | undefined {
   }
 }
 
-export function mediaUrls(body: Json, kind: MediaKind): string[] {
+function mimeForFormat(format: string) {
+  switch (format.toLowerCase()) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "gif":
+      return "image/gif";
+    case "svg":
+      return "image/svg+xml";
+    case "pdf":
+      return "application/pdf";
+    default:
+      return "image/png";
+  }
+}
+
+export function mediaUrls(
+  body: Json,
+  kind: MediaKind,
+  outputFormat = "png",
+): string[] {
   const root = body.result || body;
   const urls: string[] = [];
   const add = (value: unknown) => {
@@ -189,9 +271,7 @@ export function mediaUrls(body: Json, kind: MediaKind): string[] {
   if (Array.isArray(root.data))
     for (const item of root.data) {
       if (item.b64_json)
-        add(
-          `data:image/${item.output_format === "jpeg" ? "jpeg" : "png"};base64,${item.b64_json}`,
-        );
+        add(`data:${mimeForFormat(item.output_format || outputFormat)};base64,${item.b64_json}`);
       else
         add(
           item.url || item.image_url?.url || item.image_url || item.video_url,
@@ -204,6 +284,21 @@ export function mediaUrls(body: Json, kind: MediaKind): string[] {
     add(root.url);
   } else {
     add(root.image_url);
+    for (const candidate of root.candidates || []) {
+      for (const part of candidate.content?.parts || []) {
+        const inline = part.inline_data || part.inlineData;
+        if (inline?.data) {
+          const mime = inline.mime_type || inline.mimeType || "image/png";
+          add(`data:${mime};base64,${inline.data}`);
+        }
+        const file = part.file_data || part.fileData;
+        add(file?.file_uri || file?.fileUri);
+        if (typeof part.text === "string") {
+          for (const match of part.text.matchAll(/https:\/\/[^\s"'<>]+/g))
+            add(match[0]);
+        }
+      }
+    }
     for (const choice of root.choices || []) {
       for (const item of choice.message?.images || [])
         add(item.image_url?.url || item.url);
@@ -213,7 +308,8 @@ export function mediaUrls(body: Json, kind: MediaKind): string[] {
           add(match[1]);
         if (content.startsWith("data:image/")) add(content);
       } else if (Array.isArray(content))
-        for (const item of content) add(item.image_url?.url);
+        for (const item of content)
+          add(item.image_url?.url || item.image_url || item.url);
     }
   }
   return [...new Set(urls)];
@@ -308,6 +404,57 @@ async function readImageStream(
   return result;
 }
 
+async function uploadMedia(
+  file: File,
+  kind: "image" | "audio",
+  key: string,
+  signal: AbortSignal,
+) {
+  const form = new FormData();
+  form.append("kind", kind);
+  form.append("file", file);
+  const response = await request("/v1/media/uploads", key, {
+    method: "POST",
+    body: form,
+    signal,
+  });
+  if (!(response.headers.get("content-type") || "").includes("json"))
+    throw new ApiError("参考图上传接口未返回 JSON，请检查服务配置。");
+  const body = await response.json();
+  const rawUrl = body.url || body.data?.url || body.file?.url;
+  const url = typeof rawUrl === "string" && rawUrl.startsWith("/")
+    ? new URL(rawUrl, CONSOLE_ORIGIN).href
+    : rawUrl;
+  const safeUrl = safeMediaUrl(url);
+  if (!safeUrl || !safeUrl.startsWith("https://"))
+    throw new ApiError("参考图上传成功，但服务未返回有效的 HTTPS 图片地址。");
+  return safeUrl;
+}
+
+function modelLeaf(id: string) {
+  const index = id.lastIndexOf("/");
+  return { prefix: index < 0 ? "" : id.slice(0, index + 1), name: id.slice(index + 1) };
+}
+
+function grokImageModel(id: string, editing: boolean) {
+  const { prefix, name } = modelLeaf(id);
+  return `${prefix}${editing ? "grok-imagine-image-edit" : "grok-imagine-image-2.0"}`;
+}
+
+function imageAspectRatio(options: GenerationOptions) {
+  if (options.ratio) return options.ratio;
+  if (options.size === "1536x1024") return "3:2";
+  if (options.size === "1024x1536") return "2:3";
+  return "1:1";
+}
+
+function museDuration(model: StudioModel, requested: number) {
+  const leaf = modelLeaf(model.id).name;
+  const longModel = leaf.match(/-(20|30|40|50|60)s$/i);
+  if (longModel) return Number(longModel[1]);
+  return Math.min(10, Math.max(1, requested));
+}
+
 export async function submitGeneration(
   options: GenerationOptions,
   key: string,
@@ -316,97 +463,147 @@ export async function submitGeneration(
 ): Promise<Json> {
   const { model, prompt, reference } = options;
   if (model.protocol === "gemini") {
-    const content: Json[] = [{ type: "text", text: prompt }];
-    if (reference)
-      content.push({
-        type: "image_url",
-        image_url: { url: await fileDataUrl(reference) },
-      });
-    return jsonRequest("/v1/chat/completions", key, {
-      method: "POST",
-      signal,
-      body: JSON.stringify({
-        model: model.id,
-        stream: false,
-        messages: [{ role: "user", content }],
-        extra_body: {
-          google: {
-            image_config: {
-              aspect_ratio:
-                options.size === "1536x1024"
-                  ? "3:2"
-                  : options.size === "1024x1536"
-                    ? "2:3"
-                    : "1:1",
-              image_size: options.quality === "high" ? "2K" : "1K",
-            },
-          },
+    const parts: Json[] = [{ text: prompt }];
+    if (reference) {
+      const dataUrl = await fileDataUrl(reference);
+      parts.push({
+        inline_data: {
+          mime_type: reference.type || "image/png",
+          data: dataUrl.slice(dataUrl.indexOf(",") + 1),
         },
-      }),
-    });
-  }
-  if (model.kind === "video") {
-    const image = reference ? await fileDataUrl(reference) : undefined;
-    const body =
-      model.protocol === "seedance"
-        ? {
-            model: model.id,
-            content: [
-              { type: "text", text: prompt },
-              ...(image
-                ? [
-                    {
-                      type: "image_url",
-                      image_url: { url: image },
-                      role: "first_frame",
-                    },
-                  ]
-                : []),
-            ],
-            resolution: options.resolution,
-            duration: options.duration,
-            ratio: options.ratio,
-          }
-        : {
-            model: model.id,
-            prompt,
-            resolution: options.resolution,
-            duration: options.duration,
-            aspect_ratio: options.ratio,
-            ...(image ? { image: { url: image } } : {}),
-          };
+      });
+    }
+    const body = {
+      contents: [{ role: "user", parts }],
+      generationConfig: {
+        responseModalities: [options.geminiOutput === "url" ? "TEXT" : "IMAGE"],
+        imageConfig: {
+          aspectRatio: imageAspectRatio(options),
+          imageSize:
+            options.size === "2K" || options.quality === "high" ? "2K" : "1K",
+        },
+      },
+    };
     return jsonRequest(
-      model.protocol === "seedance"
-        ? "/api/v3/contents/generations/tasks"
-        : "/v1/videos/generations",
+      `/v1beta/models/${encodeURIComponent(model.id)}:generateContent`,
       key,
       { method: "POST", signal, body: JSON.stringify(body) },
+      "google",
     );
   }
-  const stream = options.stream && model.id.startsWith("gpt-image-");
+
+  if (model.kind === "video") {
+    let body: Json;
+    if (model.protocol === "grok-video") {
+      const leaf = modelLeaf(model.id).name;
+      const supportsImage = /video[-_.]1[._]5(?:$|[-_.])/i.test(leaf);
+      if (reference && !supportsImage)
+        throw new ApiError("图生视频请在模型列表中选择 Grok 视频 1.5。", 400);
+      body = {
+        model: model.id,
+        prompt,
+        duration: options.duration,
+        ratio: options.ratio,
+        size: options.resolution,
+        ...(reference
+          ? { images: [await uploadMedia(reference, "image", key, signal)] }
+          : {}),
+      };
+    } else if (model.protocol === "seedance") {
+      if (
+        model.id.toLowerCase().includes("canopus") &&
+        Array.from(prompt).length > 3500
+      )
+        throw new ApiError("Seedance Canopus 提示词最多 3500 个字符，请缩短后再提交。", 400);
+      body = {
+        model: model.id,
+        prompt,
+        seconds: options.duration,
+        resolution: "720p",
+        ratio: options.ratio,
+        ...(reference
+          ? { image_urls: [await uploadMedia(reference, "image", key, signal)] }
+          : {}),
+        ...(model.id.toLowerCase().includes("coke") && options.audioReference
+          ? {
+              audio_urls: [
+                await uploadMedia(options.audioReference, "audio", key, signal),
+              ],
+            }
+          : {}),
+      };
+    } else if (model.protocol === "muse-video") {
+      let sourceVideoUrl: string | undefined;
+      if (options.sourceVideoUrl?.trim()) {
+        try {
+          const parsed = new URL(options.sourceVideoUrl.trim());
+          if (parsed.protocol !== "https:" || parsed.username || parsed.password)
+            throw new Error();
+          sourceVideoUrl = parsed.href;
+        } catch {
+          throw new ApiError("Muse 续写源视频必须使用可公网访问的 HTTPS MP4 地址。", 400);
+        }
+      }
+      body = {
+        model: model.id,
+        prompt,
+        seconds: String(museDuration(model, options.duration)),
+        aspect_ratio: options.ratio,
+        ...(options.cameraMotion ? { camera_motion: options.cameraMotion } : {}),
+        ...(reference ? { first_frame: await fileDataUrl(reference) } : {}),
+        ...(sourceVideoUrl ? { video_url: sourceVideoUrl } : {}),
+      };
+    } else {
+      throw new ApiError("暂不支持此视频模型协议。");
+    }
+    return jsonRequest("/v1/videos", key, {
+      method: "POST",
+      signal,
+      body: JSON.stringify(body),
+    });
+  }
+
+  const stream =
+    options.stream &&
+    model.protocol === "image" &&
+    (options.outputFormat || "png") === "png" &&
+    !reference;
   const fields: Json = {
     model: model.id,
     prompt,
     n: options.count,
-    size: options.size,
+    response_format: "url",
   };
-  if (model.id.startsWith("gpt-image-")) fields.quality = options.quality;
-  if (stream) {
-    fields.stream = true;
-    fields.partial_images = 2;
+  if (model.protocol === "image") {
+    fields.size = options.size;
+    fields.quality = options.quality;
+    fields.background = "auto";
+    fields.output_format = options.outputFormat || "png";
+    if (fields.output_format === "gif") {
+      if (options.frameCount) fields.frame_count = options.frameCount;
+      if (options.frameDurationMs) fields.frame_duration_ms = options.frameDurationMs;
+    }
+    if (stream) {
+      fields.stream = true;
+      fields.partial_images = 2;
+    }
   }
-  let body: BodyInit;
-  if (reference) {
-    const form = new FormData();
-    for (const [key, value] of Object.entries(fields))
-      form.append(key, String(value));
-    form.append("image", reference);
-    body = form;
-  } else body = JSON.stringify(fields);
+
+  if (model.protocol === "grok-image") {
+    fields.model = grokImageModel(model.id, !!reference);
+    if (reference) {
+      const imageUrl = await uploadMedia(reference, "image", key, signal);
+      fields.images = [{ url: imageUrl, image_url: imageUrl }];
+    }
+  } else if (reference) {
+    const dataUrl = await fileDataUrl(reference);
+    fields.images = [{ image_url: dataUrl }];
+  }
+
   const response = await request(
-    `/v1/images/${reference ? "edits" : "generations"}${stream ? "" : "/async"}`,
+    `/v1/images/${reference ? "edits" : "generations"}`,
     key,
-    { method: "POST", body, signal },
+    { method: "POST", body: JSON.stringify(fields), signal },
   );
   if (response.headers.get("content-type")?.includes("text/event-stream"))
     return readImageStream(response, onPreview);
@@ -422,11 +619,11 @@ export function pollTask(
   signal: AbortSignal,
 ) {
   const prefix =
-    protocol === "seedance"
-      ? "/api/v3/contents/generations/tasks/"
-      : protocol === "grok-video"
-        ? "/v1/videos/"
-        : "/v1/images/tasks/";
+    protocol === "grok-video" ||
+    protocol === "seedance" ||
+    protocol === "muse-video"
+      ? "/v1/videos/"
+      : "/v1/images/tasks/";
   return jsonRequest(prefix + encodeURIComponent(id), key, { signal });
 }
 
@@ -463,7 +660,11 @@ export async function cacheMedia(
     });
     if (!response.ok) return;
     const blob = await response.blob();
-    if (!blob.type.startsWith("image/") && !blob.type.startsWith("video/"))
+    if (
+      !blob.type.startsWith("image/") &&
+      !blob.type.startsWith("video/") &&
+      blob.type !== "application/pdf"
+    )
       return;
     return blob;
   } catch {

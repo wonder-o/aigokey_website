@@ -11,6 +11,9 @@ const allowed = {
   POST: [
     /^\/v1\/images\/(generations|edits)(\/async)?$/,
     /^\/v1\/chat\/completions$/,
+    /^\/v1beta\/models\/[^/]+:generateContent$/,
+    /^\/v1\/media\/uploads$/,
+    /^\/v1\/videos$/,
     /^\/v1\/videos\/generations$/,
     /^\/api\/v3\/contents\/generations\/tasks$/,
   ],
@@ -48,18 +51,19 @@ export async function studioProxy(
       return fail(403, "Invalid origin");
     }
   }
-  if (!/^Bearer \S+$/.test(req.headers.authorization || ""))
+  const bearer = req.headers.authorization || "";
+  const googleKey = req.headers["x-goog-api-key"] || "";
+  if (!/^Bearer \S+$/.test(bearer) && !/^\S+$/.test(googleKey))
     return fail(401, "请填写有效的 API Key。");
-  if (Number(req.headers["content-length"]) > 30 * 1024 * 1024)
-    return fail(413, "参考图过大，请使用 20 MB 以内的图片。");
+  if (Number(req.headers["content-length"]) > 55 * 1024 * 1024)
+    return fail(413, "上传文件过大，请检查图片或音频文件大小限制。");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10 * 60 * 1000);
   res.on("close", () => controller.abort());
   try {
-    const headers = {
-      Authorization: req.headers.authorization,
-      Accept: "application/json, text/event-stream",
-    };
+    const headers = { Accept: "application/json, text/event-stream" };
+    if (/^Bearer \S+$/.test(bearer)) headers.Authorization = bearer;
+    else headers["x-goog-api-key"] = googleKey;
     if (req.headers["content-type"])
       headers["Content-Type"] = req.headers["content-type"];
     // Gateway paths already include /v1; Seedance uses its own /api/v3 namespace.
