@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "node scripts/optimize-images.mjs && vue-tsc -b && vite-ssg build && node scripts/postbuild.mjs && node scripts/validate-seo.mjs",
     "preview": "vite preview",
+    "studio": "node scripts/studio-server.mjs",
+    "test:studio": "node --test tests/studio.test.mjs",
     "update:cases": "node scripts/build-cases.mjs",
     "update:workflows": "node scripts/build-extra-workflows.mjs",
     "update:skills": "node scripts/update-skills.mjs",

@@ -3,6 +3,12 @@ import { incentivePlans } from '@/data/incentive-plans'
 
 export const routes = [
   {
+    path: '/studio/',
+    name: 'studio',
+    component: () => import('@/views/StudioView.vue'),
+    meta: { noindex: true },
+  },
+  {
     path: '/',
     name: 'home',
     component: () => import('@/views/HomeView.vue'),

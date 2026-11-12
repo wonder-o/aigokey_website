@@ -73,6 +73,12 @@ AIGOKEY 覆盖开发、产品、运营、设计、电商、自媒体、外贸、
 
 栏目会自动提供主题筛选、关键词搜索、独立文章 URL、目录、阅读进度、代码/提示词复制、来源说明和相关文章。内容发布前请运行 `npm run validate:blog`，核对原文，并保留“归纳与实践建议不代表原作者立场”的说明。
 
+## 独立生图 / 生视频工具
+
+`/studio/` 是参考深色创作界面的独立生成页面，内置 `https://llm.aigokey.com/v1`，由使用者填写 API Key。支持模型发现、文生图、参考图编辑、图片流式预览、文生视频、图生视频、本地历史和下载。
+
+开发运行 `npm run dev`；生产运行 `npm run build` 后执行 `npm run studio`，访问 `http://127.0.0.1:4173/studio/`。由于网关的跨域限制，生成需要同源服务转发，不能只依赖 GitHub Pages 静态托管。详细说明见 [docs/studio.md](docs/studio.md)。
+
 ## SEO 与域名
 
 - 唯一规范域名为 `https://www.aigokey.com/`，登录与注册使用 `https://llm.aigokey.com/`。
