@@ -83,6 +83,11 @@
                 <span class="download-option-copy"><strong>{{ t.navButtons.skillsRadar }}</strong></span>
                 <span class="download-option-arrow"><ArrowUpRight :size="15" aria-hidden="true" /></span>
               </router-link>
+              <router-link class="download-option image-option docs-option--api" to="/api-docs/" role="menuitem" @click="docsMenuOpen = false">
+                <span class="download-option-icon"><BookOpen :size="19" aria-hidden="true" /></span>
+                <span class="download-option-copy"><strong>AIGOKEY API 文档</strong></span>
+                <span class="download-option-arrow"><ArrowUpRight :size="15" aria-hidden="true" /></span>
+              </router-link>
             </div>
           </Transition>
         </div>

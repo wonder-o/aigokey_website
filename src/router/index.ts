@@ -166,6 +166,11 @@ export const routes = [
     component: () => import('@/views/AgkVideoView.vue'),
   },
   {
+    path: '/api-docs/',
+    name: 'api-docs',
+    component: () => import('@/views/ApiDocsView.vue'),
+  },
+  {
     path: '/agk-video/embed/',
     name: 'agk-video-embed',
     component: () => import('@/views/AgkVideoView.vue'),
