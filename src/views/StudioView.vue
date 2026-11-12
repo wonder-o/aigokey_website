@@ -108,15 +108,8 @@ const {
         <span class="studio-wordmark">AIGOKEY <span>STUDIO</span></span>
       </a>
       <span class="studio-header-divider" />
-      <h1>生图 · 生视频</h1>
-      <div class="studio-header-actions">
-        <a
-          :href="`${CONSOLE_ORIGIN}/keys`"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="studio-console"
-          >控制台 <ArrowUpRight :size="14"
-        /></a>
+      <div class="studio-header-title-group">
+        <h1>生图 · 生视频</h1>
         <button
           class="studio-key-button"
           :class="{ connected }"
@@ -129,6 +122,15 @@ const {
           />
           {{ connected ? "已连接 · 管理 Key" : "连接 API Key" }}
         </button>
+      </div>
+      <div class="studio-header-actions">
+        <a
+          :href="`${CONSOLE_ORIGIN}/keys`"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="studio-console"
+          >控制台 <ArrowUpRight :size="14"
+        /></a>
       </div>
     </header>
 

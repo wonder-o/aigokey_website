@@ -137,6 +137,12 @@
   font-weight: 500;
   color: var(--s-muted);
 }
+.studio-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
 .studio-header-actions {
   margin-left: auto;
   display: flex;
@@ -1201,11 +1207,21 @@
 @media (max-width: 760px) {
   .studio-header {
     height: 64px;
-    padding: 0 18px;
-    gap: 12px;
+    padding: 0 14px;
+    gap: 10px;
   }
-  .studio-header-divider,
-  .studio-header h1,
+  .studio-header-divider {
+    display: none !important;
+  }
+  .studio-header-title-group {
+    gap: 8px;
+  }
+  .studio-header h1 {
+    display: block !important;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .studio-header-actions,
   .studio-console {
     display: none !important;
   }
@@ -1226,8 +1242,13 @@
   }
   .studio-key-button {
     height: 32px;
-    font-size: 10px !important;
-    padding: 0 10px;
+    font-size: 9px !important;
+    padding: 0 8px;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .studio-header-title-group {
+    margin-left: auto;
   }
   .studio-main {
     padding: 21px 18px;
