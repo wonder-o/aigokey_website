@@ -1,6 +1,6 @@
 export const API_BASE = "https://llm.aigokey.com/v1";
 export const CONSOLE_ORIGIN = new URL(API_BASE).origin;
-const API_PROXY = "/studio-api";
+const API_PROXY = CONSOLE_ORIGIN;
 export type MediaKind = "image" | "video";
 export type Protocol =
   | "image"
@@ -106,13 +106,10 @@ function errorMessage(body: Json, fallback: string) {
     : body.error?.message || body.message || fallback;
 }
 
-type AuthScheme = "bearer" | "google";
-
 async function request(
   path: string,
   key: string,
   init: RequestInit = {},
-  authScheme: AuthScheme = "bearer",
 ) {
   let response: Response;
   try {
@@ -121,9 +118,7 @@ async function request(
       cache: "no-store",
       credentials: "omit",
       headers: {
-        ...(authScheme === "google"
-          ? { "x-goog-api-key": key }
-          : { Authorization: `Bearer ${key}` }),
+        Authorization: `Bearer ${key}`,
         ...(init.body instanceof FormData
           ? {}
           : { "Content-Type": "application/json" }),
@@ -164,9 +159,8 @@ async function jsonRequest(
   path: string,
   key: string,
   init?: RequestInit,
-  authScheme: AuthScheme = "bearer",
 ): Promise<Json> {
-  const response = await request(path, key, init, authScheme);
+  const response = await request(path, key, init);
   if (!(response.headers.get("content-type") || "").includes("json"))
     throw new ApiError(
       "生成服务未启动。请使用 npm run dev 或 npm run studio 启动此页面。",
@@ -488,7 +482,6 @@ export async function submitGeneration(
       `/v1beta/models/${encodeURIComponent(model.id)}:generateContent`,
       key,
       { method: "POST", signal, body: JSON.stringify(body) },
-      "google",
     );
   }
 

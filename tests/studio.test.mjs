@@ -1,9 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createServer } from "node:http";
 import ts from "typescript";
-import { studioProxy, STUDIO_UPSTREAM } from "../scripts/studio-proxy.mjs";
 
 const source = readFileSync(
   new URL("../src/lib/studio-api.ts", import.meta.url),
@@ -97,7 +95,7 @@ test("model catalog reports unrecognized IDs without returning credential data",
 });
 test("model-list permission errors identify the attempted endpoint", async (t) => {
   t.mock.method(globalThis, "fetch", async (url) => {
-    assert.equal(url, "/studio-api/v1/models");
+    assert.equal(url, "https://llm.aigokey.com/v1/models");
     return json(
       { error: { message: "Image generation is not enabled for this group" } },
       403,
@@ -157,8 +155,10 @@ test("normalizes asynchronous image, Gemini and video results", () => {
 });
 test("GPT Image submission uses the documented synchronous Images endpoint", async (t) => {
   const mock = t.mock.method(globalThis, "fetch", async (url, init) => {
-    assert.equal(url, "/studio-api/v1/images/generations");
+    assert.equal(url, "https://llm.aigokey.com/v1/images/generations");
     assert.equal(init.headers.Authorization, `Bearer ${key}`);
+    assert.equal(init.headers.Cookie, undefined);
+    assert.equal(init.credentials, "omit");
     assert.deepEqual(JSON.parse(init.body), {
       model: "gpt-image-2",
       prompt: "测试画面",
@@ -199,7 +199,7 @@ test("GPT Image GIF and vector formats preserve output MIME and GIF frame fields
 });
 test("GPT Image edits use the documented JSON images input", async (t) => {
   t.mock.method(globalThis, "fetch", async (url, init) => {
-    assert.equal(url, "/studio-api/v1/images/edits");
+    assert.equal(url, "https://llm.aigokey.com/v1/images/edits");
     assert.equal(init.headers["Content-Type"], "application/json");
     const body = JSON.parse(init.body);
     assert.equal(body.model, "gpt-image-2");
@@ -236,20 +236,20 @@ test("Grok image edit switches endpoint model and supplies both reference URL fi
     new AbortController().signal,
     () => {},
   );
-  assert.equal(calls[0][0], "/studio-api/v1/media/uploads");
+  assert.equal(calls[0][0], "https://llm.aigokey.com/v1/media/uploads");
   assert.equal(calls[0][1].body.get("kind"), "image");
-  assert.equal(calls[1][0], "/studio-api/v1/images/edits");
+  assert.equal(calls[1][0], "https://llm.aigokey.com/v1/images/edits");
   const body = JSON.parse(calls[1][1].body);
   assert.equal(body.model, "grok-imagine-image-edit");
   assert.equal(body.images[0].url, "https://llm.aigokey.com/v1/media/uploads/expiry/reference.png");
   assert.equal(body.images[0].image_url, body.images[0].url);
   assert.deepEqual(api.mediaUrls(result, "image"), ["https://example.com/edited.png"]);
 });
-test("Gemini Banana uses generateContent and x-goog-api-key", async (t) => {
+test("Gemini Banana uses generateContent and Bearer auth", async (t) => {
   t.mock.method(globalThis, "fetch", async (url, init) => {
-    assert.equal(url, "/studio-api/v1beta/models/gemini-3-pro-image-preview:generateContent");
-    assert.equal(init.headers["x-goog-api-key"], key);
-    assert.equal(init.headers.Authorization, undefined);
+    assert.equal(url, "https://llm.aigokey.com/v1beta/models/gemini-3-pro-image-preview:generateContent");
+    assert.equal(init.headers.Authorization, `Bearer ${key}`);
+    assert.equal(init.headers["x-goog-api-key"], undefined);
     const body = JSON.parse(init.body);
     assert.deepEqual(body.generationConfig.responseModalities, ["IMAGE"]);
     assert.equal(body.generationConfig.imageConfig.aspectRatio, "16:9");
@@ -290,7 +290,7 @@ test("Seedance uploads image and audio references before creating one task", asy
   assert.equal(calls.length, 3);
   assert.equal(calls[0][1].body.get("kind"), "image");
   assert.equal(calls[1][1].body.get("kind"), "audio");
-  assert.equal(calls[2][0], "/studio-api/v1/videos");
+  assert.equal(calls[2][0], "https://llm.aigokey.com/v1/videos");
   const body = JSON.parse(calls[2][1].body);
   assert.equal(body.model, "seedance2.0 coke");
   assert.equal(body.seconds, 6);
@@ -299,7 +299,7 @@ test("Seedance uploads image and audio references before creating one task", asy
 });
 test("Muse sends its model-specific string duration, camera motion, and continuation URL", async (t) => {
   t.mock.method(globalThis, "fetch", async (url, init) => {
-    assert.equal(url, "/studio-api/v1/videos");
+    assert.equal(url, "https://llm.aigokey.com/v1/videos");
     const body = JSON.parse(init.body);
     assert.equal(body.model, "muse-video-30s");
     assert.equal(body.seconds, "30");
@@ -319,6 +319,9 @@ test("Muse sends its model-specific string duration, camera motion, and continua
 test("video protocols use their own verified payload and query paths", async (t) => {
   const calls = [];
   t.mock.method(globalThis, "fetch", async (url, init) => {
+    const { Authorization, ...clientHeaders } = init.headers;
+    assert.equal(Authorization, `Bearer ${key}`);
+    assert.equal(clientHeaders["x-goog-api-key"], undefined);
     calls.push([url, init.body && JSON.parse(init.body)]);
     if (String(url).endsWith("/v1/videos"))
       return json({ id: "video-task", task_id: "video-task", status: "queued" });
@@ -337,12 +340,12 @@ test("video protocols use their own verified payload and query paths", async (t)
     await api.pollTask(id, model.protocol, key, new AbortController().signal);
   }
   assert.deepEqual(calls.map(([url]) => url), [
-    "/studio-api/v1/videos",
-    "/studio-api/v1/videos/video-task",
-    "/studio-api/v1/videos",
-    "/studio-api/v1/videos/video-task",
-    "/studio-api/v1/videos",
-    "/studio-api/v1/videos/video-task",
+    "https://llm.aigokey.com/v1/videos",
+    "https://llm.aigokey.com/v1/videos/video-task",
+    "https://llm.aigokey.com/v1/videos",
+    "https://llm.aigokey.com/v1/videos/video-task",
+    "https://llm.aigokey.com/v1/videos",
+    "https://llm.aigokey.com/v1/videos/video-task",
   ]);
   assert.equal(calls[0][1].duration, 6);
   assert.equal(calls[0][1].size, "720p");
@@ -410,7 +413,7 @@ test("media downloads do not carry the API key", async (t) => {
 });
 test("protected video content uses only the fixed gateway task path", async (t) => {
   t.mock.method(globalThis, "fetch", async (url, init) => {
-    assert.equal(url, "/studio-api/v1/videos/task-123/content");
+    assert.equal(url, "https://llm.aigokey.com/v1/videos/task-123/content");
     assert.equal(init.headers.Authorization, `Bearer ${key}`);
     return new Response(new Blob(["video"], { type: "video/mp4" }));
   });
@@ -432,97 +435,4 @@ test("video content normalizes gateway binary MIME for browser playback", async 
   );
   const blob = await api.videoContent("task-binary", key);
   assert.equal(blob.type, "video/mp4");
-});
-test("relay accepts Gemini authentication and documented unified video creation", async (t) => {
-  const originalFetch = globalThis.fetch;
-  const forwarded = [];
-  const server = createServer((req, res) => studioProxy(req, res));
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  t.after(() => {
-    server.closeAllConnections();
-    server.close();
-  });
-  const origin = `http://127.0.0.1:${server.address().port}`;
-  t.mock.method(globalThis, "fetch", async (url, init) => {
-    if (String(url).startsWith(origin)) return originalFetch(url, init);
-    forwarded.push([url, init]);
-    return json({ ok: true });
-  });
-  const gemini = await fetch(
-    `${origin}/studio-api/v1beta/models/gemini-3-pro-image-preview:generateContent`,
-    {
-      method: "POST",
-      headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [] }),
-    },
-  );
-  assert.equal(gemini.status, 200);
-  assert.equal(forwarded[0][0], "https://llm.aigokey.com/v1beta/models/gemini-3-pro-image-preview:generateContent");
-  assert.equal(forwarded[0][1].headers["x-goog-api-key"], key);
-  assert.equal(forwarded[0][1].headers.Authorization, undefined);
-
-  const video = await fetch(`${origin}/studio-api/v1/videos`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "muse-video", seconds: "10" }),
-  });
-  assert.equal(video.status, 200);
-  assert.equal(forwarded[1][0], "https://llm.aigokey.com/v1/videos");
-  assert.equal(forwarded[1][1].headers.Authorization, `Bearer ${key}`);
-});
-test("relay enforces fixed host, path allowlist, same origin and bearer auth", async (t) => {
-  const originalFetch = globalThis.fetch;
-  let forwarded = 0;
-  const server = createServer((req, res) => studioProxy(req, res));
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  t.after(() => {
-    server.closeAllConnections();
-    server.close();
-  });
-  const origin = `http://127.0.0.1:${server.address().port}`;
-  t.mock.method(globalThis, "fetch", async (url, init) => {
-    if (String(url).startsWith(origin)) return originalFetch(url, init);
-    forwarded++;
-    assert.equal(STUDIO_UPSTREAM, "https://llm.aigokey.com/v1");
-    assert.equal(api.API_BASE, STUDIO_UPSTREAM);
-    assert.equal(api.CONSOLE_ORIGIN, "https://llm.aigokey.com");
-    assert.equal(url, `${STUDIO_UPSTREAM}/models`);
-    assert.equal(init.headers.Authorization, `Bearer ${key}`);
-    assert.equal(init.headers.Cookie, undefined);
-    assert.equal(init.redirect, "error");
-    return json({ data: [] });
-  });
-  const call = (path, options = {}) => fetch(origin + path, options);
-  assert.equal((await call("/studio-api/v1/models")).status, 401);
-  assert.equal(
-    (
-      await call("/studio-api/v1/models", {
-        headers: {
-          Authorization: `Bearer ${key}`,
-          Origin: "https://attacker.example",
-        },
-      })
-    ).status,
-    403,
-  );
-  for (const path of [
-    "/studio-api/admin",
-    "/studio-api/https://attacker.example/",
-    "/studio-api/v1/videos/foo%2fbar",
-  ])
-    assert.equal(
-      (await call(path, { headers: { Authorization: `Bearer ${key}` } }))
-        .status,
-      404,
-    );
-  const response = await call("/studio-api/v1/models", {
-    headers: {
-      Authorization: `Bearer ${key}`,
-      Origin: origin,
-      Cookie: "private=never-forward",
-    },
-  });
-  assert.equal(response.status, 200);
-  assert.equal(response.headers.get("cache-control"), "no-store");
-  assert.equal(forwarded, 1);
 });

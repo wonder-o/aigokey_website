@@ -24,9 +24,7 @@ npm run studio
 
 ## 网关与部署
 
-Base URL 固定为 `https://llm.aigokey.com/v1`，用户只需在页面中填写 Key。浏览器访问同源 `/studio-api/*`；Node 服务将授权头与请求体转发到固定网关，确保 `/v1` 只拼接一次。Gemini 官方兼容调用使用 `/v1beta/models/{model}:generateContent` 和 `x-goog-api-key`；其他协议使用 Bearer Key。转发层只允许 Studio 所需的固定接口，不记录或保存 Key，也不转发浏览器 Cookie。生成请求不自动重试、不自动回退为另一个 POST。
-
-本次检查发现网关对 `www.aigokey.com` 及 localhost 的跨域预检返回 403。因此 **单独上传静态 `dist` 到 GitHub Pages 不能完成生成**。生产环境需要运行上述 Node 服务，或将 `/studio-api/` 配置为等价的固定上游反向代理；静态页面和代理应处于同一 HTTPS 域名。现有官网其余页面仍可正常静态部署。
+Base URL 固定为 `https://llm.aigokey.com/v1`，用户只需在页面中填写 Key。浏览器直接请求固定网关域名，图片、视频及 Gemini 兼容调用统一使用 `Authorization: Bearer <Key>`；不带官网 Cookie，不使用 `x-goog-api-key`。Sub2API 仅允许 `https://www.aigokey.com`、`https://www.aigokey.cn`、`https://www.aigokey.cc` 三个精确 Origin，禁止通配来源。该模式不需要额外 Node 代理。生成请求不自动重试、不自动回退为另一个 POST。
 
 ## 支持的接口
 
